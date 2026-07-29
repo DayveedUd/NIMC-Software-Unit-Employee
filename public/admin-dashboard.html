@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NIMC Software Unit Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
+<style>
+
+  /* ---------- 1. Reset & base styles ---------- */
+  /* This removes the default spacing browsers add, so we have full control */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: "Work Sans", sans-serif;
+    background: #F3F1EA url(pattern-bg.svg) repeat;    /* light page background */
+  }
+
+  /* ---------- 2. The white card that holds the whole dashboard ---------- */
+  .card {
+    width: 100%;         /* stops it getting too wide on big screens */
+    min-height: 100vh;           
+    background: #F3F1EA url(pattern-bg.svg) repeat;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- 3. Green header section ---------- */
+  .header {
+    background: #0B6E4F;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;  /* pushes menu+logo left, button right */
+  }
+
+  /* Left side of header: menu icon + logo + title text, grouped together */
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;              /* 50% = perfect circle */
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 6px;
+  }
+
+  .logo-circle img {
+    width: 130%;
+    height: 130%;
+    object-fit: contain;               /* keeps the logo from stretching */
+  }
+
+  .header-text h1 {
+    color: rgba(255, 255, 255, 0.999);
+    font-size: 12px;
+    margin-top: 2px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: large;
+  }
+
+  .header-text p {
+    color: rgba(255, 255, 255, 0.999);
+    font-size: 10px;
+    margin-top: 2px;
+    font-size: medium;
+  }
+
+  /* "Admin dashboard" pill button on the right of the header */
+  .admin-btn {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 999px;      /* very high value = fully rounded pill shape */
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .admin-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  /* ---------- 4. Search bar ---------- */
+  .search-wrap {
+  max-width: 600px;
+  width: 100%;
+  margin: 60px auto 0;
+  padding: 0 24px;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #F6F7F5;
+    border: 1px solid #E4E6E0;
+    border-radius: 999px;      /* pill-shaped search field */
+    padding: 14px 20px;
+  }
+
+  /* Simple magnifying-glass icon drawn with CSS instead of an image */
+  .search-icon {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #9AA39C;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .search-icon::after {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 2px;
+    background: #9AA39C;
+    border-radius: 2px;
+    right: -6px;
+    bottom: -1px;
+    transform: rotate(45deg);
+  }
+
+  .search-bar input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: inherit;
+    color: #16241D;
+    width: 100%;
+  }
+
+  .search-bar input::placeholder {
+    color: #9AA39C;
+  }
+
+  /* ---------- 5. "Suggested results" label ---------- */
+  .section-label {
+    max-width: 600px;
+    margin: 24px auto 0;
+    padding: 20px 24px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #0B6E4F;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+
+  /* ---------- 6. List of clickable result rows ---------- */
+  .results-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 28px;
+    padding: 0 24px;
+  }
+
+  /* Each row is a real <button> so it's keyboard-accessible and clickable,
+     styled to look like plain list content rather than a typical button */
+  .result-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 96px;
+    background: none;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .result-row:hover {
+    background: #F9FAF8;      /* subtle highlight to show it's interactive */
+  }
+
+  /* Round avatar placeholder with a simple person icon inside */
+  .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #E3F1EA;      /* light green tint */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .avatar svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+  }
+
+  .result-info{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .result-info .name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #16241D;
+  }
+
+  .result-info .role {
+    font-size: 13px;
+    color: #7C867F;
+    margin-top: 1px;
+  }
+
+  /* Shown while data is loading, or if there's nothing to show yet */
+  .empty-state {
+    max-width: 600px;
+    margin: 40px auto 0;
+    padding: 0 24px;
+    text-align: center;
+    font-size: 13px;
+    color: #7C867F;
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="card">
+
+    <!-- Green header: menu icon, logo, title, and admin button -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-circle">
+          <img src="nimc-logo.jfif" alt="NIMC logo" />
+        </div>
+        <div class="header-text">
+          <h1>National Identity Management Commission</h1>
+          <p>Software Unit</p>
+        </div>
+      </div>
+      <button class="admin-btn" id="logoutBtn">Log out</button>
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-wrap">
+      <div class="search-bar">
+        <span class="search-icon"></span>
+        <input type="text" id="search-input" placeholder="Search Intern / Corp Member" />
+      </div>
+    </div>
+
+    <!-- Label above the results list -->
+    <p class="section-label" id="results-label">Registered employees</p>
+
+    <!-- Clickable list of registered people, built dynamically from the database -->
+    <div class="results-list" id="results-list"></div>
+
+    <!-- Shown while loading, on error, or when there's nobody registered yet -->
+    <p class="empty-state" id="empty-state"></p>
+
+  </div>
+
+  <script>
+    // ---------------------------------------------------------------
+    // AUTH GUARD -- runs before anything else on this page.
+    // If there's no token, this page's data is off-limits; send the
+    // person to the login screen instead.
+    // ---------------------------------------------------------------
+    const adminToken = localStorage.getItem("adminToken");
+
+    if (!adminToken) {
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      localStorage.removeItem("adminToken");
+      window.location.href = "login.html";
+    });
+
+    const resultsList = document.getElementById("results-list");
+    const resultsLabel = document.getElementById("results-label");
+    const emptyState = document.getElementById("empty-state");
+    const searchInput = document.getElementById("search-input");
+
+    // Person-icon SVG reused for every avatar (until a real photo is uploaded)
+    const personIconSVG = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0B6E4F" stroke-width="2">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+      </svg>`;
+
+    let allEmployees = []; // holds everything fetched from the database
+
+    // Build one result row (button) for a single employee record
+    function createResultRow(employee) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "result-row";
+      row.dataset.id = employee._id;
+
+      const fullName = `${employee.firstName} ${employee.lastName}`;
+
+      row.innerHTML = `
+        <span class="avatar">
+          ${employee.photoUrl ? `<img src="${employee.photoUrl}" alt="${fullName}" />` : personIconSVG}
+        </span>
+        <span class="result-info">
+          <div class="name">${fullName}</div>
+          <div class="role">${employee.position}</div>
+        </span>
+      `;
+
+      row.addEventListener("click", function () {
+        window.location.href = `profile.html?id=${employee._id}`;
+      });
+
+      return row;
+    }
+
+    // Render a given list of employees into the results grid
+    function renderResults(employeeList) {
+      resultsList.innerHTML = "";
+
+      if (employeeList.length === 0) {
+        emptyState.textContent = "No matching employees found.";
+        return;
+      }
+
+      emptyState.textContent = "";
+      employeeList.forEach(employee => {
+        resultsList.appendChild(createResultRow(employee));
+      });
+    }
+
+    // Fetch all registered employees from the backend
+    async function loadEmployees() {
+      emptyState.textContent = "Loading employees...";
+
+      try {
+        const response = await fetch("/api/employees", {
+          headers: {
+            "Authorization": `Bearer ${adminToken}`
+          }
+        });
+
+        if (response.status === 401) {
+          // Token missing/expired/invalid -- send back to login
+          localStorage.removeItem("adminToken");
+          window.location.href = "login.html";
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to load employees");
+        }
+
+        allEmployees = await response.json();
+
+        if (allEmployees.length === 0) {
+          resultsLabel.textContent = "Registered employees";
+          emptyState.textContent = "No employees have registered yet.";
+        } else {
+          renderResults(allEmployees);
+        }
+
+      } catch (error) {
+        console.error(error);
+        emptyState.textContent = "Could not load employees. Is the server running?";
+      }
+    }
+
+    // Live search, filtering the already-fetched list (no extra requests needed)
+    searchInput.addEventListener("input", function () {
+      const searchText = this.value.toLowerCase();
+
+      resultsLabel.textContent = searchText ? "Search results" : "Registered employees";
+
+      const filtered = allEmployees.filter(employee => {
+        const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
+        const role = employee.position.toLowerCase();
+        return fullName.includes(searchText) || role.includes(searchText);
+      });
+
+      renderResults(filtered);
+    });
+
+    // Kick things off
+    loadEmployees();
+  </script>
+
+</body>
+</html>

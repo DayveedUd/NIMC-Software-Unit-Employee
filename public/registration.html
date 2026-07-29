@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NIMC Software Unit Registration Page</title>
+<style>
+
+  /* ---------- 1. Reset & base styles ---------- */
+  /* This removes the default spacing browsers add, so we have full control */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+ html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #F3F1EA url(pattern-bg.svg) repeat;      /* light grey page background */
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;      /* vertically centers the card */
+    justify-content: center;
+    overflow: hidden;         /* no page scroll */
+  }
+
+  /* ---------- 2. The white card that holds the whole form ---------- */
+  .card {
+    max-width: 480px;         /* stops it getting too wide on big screens */
+    width: 100%;
+    margin: 0 auto;           /* centers the card horizontally */
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #E4E6E0;
+    overflow: hidden;         /* keeps the green header's corners rounded too */
+    max-height: 96vh;
+    overflow-y: auto;         /* scrolls inside the card only if truly needed */
+  }
+
+  /* ---------- 3. Green header section ---------- */
+  .header {
+    background: #0B6E4F;
+    padding: 32px 32px 32px;
+    text-align: center;
+  }
+
+  .logo-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;              /* 50% = perfect circle */
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;             /* centers the circle, adds space below */
+    padding: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+  }
+
+  .logo-circle img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;               /* keeps the logo from stretching */
+  }
+
+  .header h1 {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .header p {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  /* ---------- 4. Form body ---------- */
+  .body {
+    padding: 18px 28px 6px;
+  }
+
+  /* Puts two fields side by side, e.g. First name / Last name */
+  .row {
+    display: flex;
+    gap: 14px;
+  }
+
+  .field {
+    flex: 1;                  /* makes fields in a .row share space equally */
+    margin-bottom: 12px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #5B6660;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+
+  /* Shared styling for text inputs and the select dropdown */
+  .field input,
+  .field select {
+      width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #D8DBD5;
+    font-size: 13px;
+    color: #16241D;
+    background: #ffffff;
+    text-align: center;
+    font-family: inherit;      /* makes the input use the same font as the page */
+  }
+
+  .field input:focus,
+  .field select:focus {
+    outline: none;
+    border-color: #0B6E4F;     /* highlight green when the user clicks in */
+  }
+
+  .field input::placeholder {
+    color: #9AA39C;
+  }
+
+  /* Red border on a field that failed validation */
+  .field input.error,
+  .field select.error {
+    border-color: #D64545;
+  }
+
+  /* Small red message shown under an invalid field */
+  .error-message {
+    display: none;
+    font-size: 11px;
+    color: #D64545;
+    margin-top: 4px;
+    text-align: left;
+  }
+
+  .error-message.visible {
+    display: block;
+  }
+
+  /* The select dropdown needs its arrow drawn manually since we removed the default */
+  .field select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #5B6660 50%),
+                       linear-gradient(135deg, #5B6660 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  /* ---------- Upload photo field ---------- */
+  .upload-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Styled to look like a secondary version of the submit button:
+     green outline instead of solid fill */
+  .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    color: #0B6E4F;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border: 1px solid #0B6E4F;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .upload-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+    /* Feedback text next to the button, showing the chosen filename */
+  .upload-status {
+    font-size: 12px;
+    color: #9AA39C;
+  }
+
+    /* Added by JS once a file is actually picked */
+  .upload-status.success {
+    color: #0B6E4F;
+    font-weight: 600;
+  }
+
+  /* ---------- 5. Work days row of circles ---------- */
+  .days {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .day {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #D8DBD5;
+    background: #ffffff;
+    color: #5B6660;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Add this class with JavaScript when a user clicks a day, to mark it selected */
+  .day.active {
+    background: #0B6E4F;
+    border-color: #0B6E4F;
+    color: #ffffff;
+  }
+
+  /* ---------- 6. Submit button ---------- */
+  .footer {
+    padding: 20px 30px;
+    display: flex;
+    justify-content: flex-end;   /* pushes the button to the right */
+  }
+
+  .submit-btn {
+    background: #0B6E4F;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 28px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .submit-btn:hover {
+    background: #095C42;    /* slightly darker green on hover */
+  }
+
+  .submit-btn:disabled {
+    background: #9AA39C;
+    cursor: not-allowed;
+  }
+
+</style>
+</head>
+<body>
+
+  <form class="card" id="registrationForm">
+
+    <!-- Green header with logo and title -->
+    <div class="header">
+      <div class="logo-circle">
+        <img src="nimc-logo.jfif" alt="NIMC logo" />
+      </div>
+      <h1>Register page</h1>
+      <p>Fill in your details below to complete registration</p>
+    </div>
+
+    <!-- Form fields -->
+    <div class="body">
+
+      <div class="row">
+        <div class="field">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName" placeholder="David" />
+          <span class="error-message" id="firstNameError">First name is required</span>
+        </div>
+        <div class="field">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName" placeholder="Udoinyang" />
+          <span class="error-message" id="lastNameError">Last name is required</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="position">Position</label>
+        <select id="position">
+          <option>Corp Member</option>
+          <option>Intern</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="school">School</label>
+          <input type="text" id="school" placeholder="University of Uyo" />
+          <span class="error-message" id="schoolError">School is required</span>
+        </div>
+        <div class="field">
+          <label for="discipline">Discipline</label>
+          <input type="text" id="discipline" placeholder="Software Engineering" />
+          <span class="error-message" id="disciplineError">Discipline is required</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="skill">Skill</label>
+        <input type="text" id="skill" placeholder="Frontend development" />
+        <span class="error-message" id="skillError">Skill is required</span>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="phone">Phone no.</label>
+          <input type="tel" id="phone" placeholder="080 0000 0000" />
+          <span class="error-message" id="phoneError">Enter a valid phone number</span>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="udoinyangdavid@email.com" />
+          <span class="error-message" id="emailError">Enter a valid email address</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="photo">Upload photo</label>
+        <div class="upload-wrap">
+          <!-- This label is styled as the button; clicking it opens
+               the file picker for the hidden input below -->
+          <label for="photo" class="upload-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 16V4M12 4l-4 4M12 4l4 4"/>
+              <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+            </svg>
+            Upload image
+          </label>
+          <input type="file" id="photo" accept="image/*" style="display:none" />
+          <span class="upload-status" id="uploadStatus">No file selected</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Work days</label>
+        <div class="days">
+          <button type="button" class="day">Mo</button>
+          <button type="button" class="day">Tu</button>
+          <button type="button" class="day">We</button>
+          <button type="button" class="day">Th</button>
+          <button type="button" class="day">Fr</button>
+        </div>
+        <span class="error-message" id="workDaysError">Select at least one work day</span>
+      </div>
+
+    </div>
+    <script>
+const days = document.querySelectorAll(".day");
+
+days.forEach(day => {
+    day.addEventListener("click", function () {
+        this.classList.toggle("active");
+    });
+});
+  // Show feedback once a photo is chosen
+const photoInput = document.getElementById("photo");
+const uploadStatus = document.getElementById("uploadStatus");
+
+photoInput.addEventListener("change", function () {
+    if (this.files && this.files.length > 0) {
+        uploadStatus.textContent = "✓ " + this.files[0].name;
+        uploadStatus.classList.add("success");
+    } else {
+        uploadStatus.textContent = "No file selected";
+        uploadStatus.classList.remove("success");
+    }
+});
+const form = document.getElementById("registrationForm");
+
+// ---------------------------------------------------------------
+// VALIDATION
+// Checks every field before we ever send a request. Returns true
+// if everything's valid, false if not (and shows the relevant
+// error messages / red borders along the way).
+// ---------------------------------------------------------------
+
+function showError(inputEl, errorEl) {
+    inputEl.classList.add("error");
+    errorEl.classList.add("visible");
+}
+
+function clearError(inputEl, errorEl) {
+    inputEl.classList.remove("error");
+    errorEl.classList.remove("visible");
+}
+
+function validateForm() {
+    let isValid = true;
+
+    // Simple required-text-field check, reused for several fields
+    function requireText(id) {
+        const input = document.getElementById(id);
+        const error = document.getElementById(id + "Error");
+        if (input.value.trim() === "") {
+            showError(input, error);
+            isValid = false;
+        } else {
+            clearError(input, error);
+        }
+    }
+
+    requireText("firstName");
+    requireText("lastName");
+    requireText("school");
+    requireText("discipline");
+    requireText("skill");
+
+    // Email: required AND must look like a real email address
+    const emailInput = document.getElementById("email");
+    const emailError = document.getElementById("emailError");
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(emailInput.value.trim())) {
+        showError(emailInput, emailError);
+        isValid = false;
+    } else {
+        clearError(emailInput, emailError);
+    }
+
+    // Phone: required AND must be mostly digits, at least 10 of them
+    // (allows spaces/dashes like "080 0000 0000" but rejects letters/junk)
+    const phoneInput = document.getElementById("phone");
+    const phoneError = document.getElementById("phoneError");
+    const digitsOnly = phoneInput.value.replace(/[\s-]/g, "");
+    const phonePattern = /^\d{10,15}$/;
+    if (!phonePattern.test(digitsOnly)) {
+        showError(phoneInput, phoneError);
+        isValid = false;
+    } else {
+        clearError(phoneInput, phoneError);
+    }
+
+    // Work days: at least one must be selected
+    const workDaysError = document.getElementById("workDaysError");
+    const anyDaySelected = document.querySelectorAll(".day.active").length > 0;
+    if (!anyDaySelected) {
+        workDaysError.classList.add("visible");
+        isValid = false;
+    } else {
+        workDaysError.classList.remove("visible");
+    }
+
+    return isValid;
+}
+
+// Clear a field's error the moment the person starts fixing it,
+// rather than making them re-submit to find out it's fixed
+["firstName", "lastName", "school", "discipline", "skill", "email", "phone"].forEach(id => {
+    const input = document.getElementById(id);
+    const error = document.getElementById(id + "Error");
+    input.addEventListener("input", () => clearError(input, error));
+});
+
+document.querySelectorAll(".day").forEach(day => {
+    day.addEventListener("click", () => {
+        document.getElementById("workDaysError").classList.remove("visible");
+    });
+});
+
+form.addEventListener("submit", async function(e) {
+
+    e.preventDefault(); // stops the page refreshing
+
+    if (!validateForm()) {
+        return; // stop here -- don't send anything to the server
+    }
+
+    // Looked up here (not at the top of the script) since this runs after
+    // the whole page -- including the submit button further down -- has loaded
+    const submitBtn = document.querySelector(".submit-btn");
+
+    // FormData lets us send both regular text fields AND the photo file
+    // together in a single request (JSON alone can't carry a file).
+    const formData = new FormData();
+
+    formData.append("firstName", document.getElementById("firstName").value);
+    formData.append("lastName", document.getElementById("lastName").value);
+    formData.append("position", document.getElementById("position").value);
+    formData.append("school", document.getElementById("school").value);
+    formData.append("discipline", document.getElementById("discipline").value);
+    formData.append("skill", document.getElementById("skill").value);
+    formData.append("phone", document.getElementById("phone").value);
+    formData.append("email", document.getElementById("email").value);
+
+    // Add each selected work day as its own entry
+    document.querySelectorAll(".day.active").forEach(day => {
+        formData.append("workDays", day.textContent);
+    });
+
+    // Only attach a photo if one was actually chosen
+    if (photoInput.files.length > 0) {
+        formData.append("photo", photoInput.files[0]);
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+    try {
+
+        const response = await fetch(
+            "/api/employees/register",
+            {
+                method: "POST",
+                // NOTE: no "Content-Type" header here -- the browser sets
+                // the correct multipart boundary automatically for FormData.
+                // Setting it manually breaks the upload.
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        alert(data.message);
+
+        form.reset();
+        uploadStatus.textContent = "No file selected";
+        uploadStatus.classList.remove("success");
+        document.querySelectorAll(".day.active").forEach(day => day.classList.remove("active"));
+        document.querySelectorAll(".error").forEach(el => el.classList.remove("error"));
+        document.querySelectorAll(".error-message.visible").forEach(el => el.classList.remove("visible"));
+
+
+    } catch(error) {
+
+        console.log(error);
+
+        alert("Registration failed");
+
+    } finally {
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+
+    }
+
+});
+</script>
+
+    <!-- Submit button -->
+    <div class="footer">
+      <button type="submit" class="submit-btn">Submit</button>
+    </div>
+
+  </form>
+
+</body>
+</html>

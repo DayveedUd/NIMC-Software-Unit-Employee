@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NIMC Admin Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
+<style>
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: "Work Sans", sans-serif;
+    background: #F3F1EA url(pattern-bg.svg) repeat;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .card {
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #E4E6E0;
+    overflow: hidden;
+  }
+
+  .header {
+    background: #0B6E4F;
+    padding: 32px 32px 32px;
+    text-align: center;
+  }
+
+  .logo-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    padding: 6px;
+    overflow: hidden;
+  }
+
+  .logo-circle img {
+    width: 130%;
+    height: 130%;
+    object-fit: contain;
+  }
+
+  .header h1 {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: "Poppins", sans-serif;
+  }
+
+  .header p {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  .body {
+    padding: 28px 28px 8px;
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #5B6660;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+
+  .field input {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #D8DBD5;
+    font-size: 14px;
+    color: #16241D;
+    background: #ffffff;
+    font-family: inherit;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: #0B6E4F;
+  }
+
+  /* Wraps the password input so the eye icon can sit inside it */
+  .password-wrap {
+    position: relative;
+  }
+
+  .password-wrap input {
+    padding-right: 40px; /* leaves room so typed text doesn't run under the icon */
+  }
+
+  .toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toggle-password svg {
+    width: 18px;
+    height: 18px;
+    stroke: #9AA39C;
+  }
+
+  .toggle-password:hover svg {
+    stroke: #5B6660;
+  }
+
+  .field input.error {
+    border-color: #D64545;
+  }
+
+  .error-message {
+    display: none;
+    font-size: 12px;
+    color: #D64545;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .error-message.visible {
+    display: block;
+  }
+
+  .footer {
+    padding: 8px 28px 28px;
+  }
+
+  .login-btn {
+    width: 100%;
+    background: #0B6E4F;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .login-btn:hover {
+    background: #095C42;
+  }
+
+  .login-btn:disabled {
+    background: #9AA39C;
+    cursor: not-allowed;
+  }
+
+</style>
+</head>
+<body>
+
+  <form class="card" id="loginForm">
+
+    <div class="header">
+      <div class="logo-circle">
+        <img src="nimc-logo.jfif" alt="NIMC logo" />
+      </div>
+      <h1>Admin login</h1>
+      <p>Sign in to manage registered employees</p>
+    </div>
+
+    <div class="body">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input type="password" id="password" autocomplete="current-password" />
+          <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <p class="error-message" id="loginError"></p>
+    </div>
+
+    <div class="footer">
+      <button type="submit" class="login-btn" id="loginBtn">Log in</button>
+    </div>
+
+  </form>
+
+  <script>
+    // Toggle the password field between hidden (dots) and visible (plain text)
+    const passwordInput = document.getElementById("password");
+    const togglePasswordBtn = document.getElementById("togglePassword");
+    const eyeIcon = document.getElementById("eyeIcon");
+
+    const eyeOpenPath = `
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    `;
+
+    const eyeClosedPath = `
+      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 4.22-5.94"/>
+      <path d="M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19"/>
+      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    `;
+
+    togglePasswordBtn.addEventListener("click", function () {
+      const isHidden = passwordInput.type === "password";
+
+      passwordInput.type = isHidden ? "text" : "password";
+      eyeIcon.innerHTML = isHidden ? eyeClosedPath : eyeOpenPath;
+      togglePasswordBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    });
+
+    const form = document.getElementById("loginForm");
+    const loginError = document.getElementById("loginError");
+
+    // If already logged in with a token that hasn't expired, skip the login screen
+    const existingToken = localStorage.getItem("adminToken");
+    if (existingToken) {
+      window.location.href = "admin-dashboard.html";
+    }
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const loginBtn = document.getElementById("loginBtn");
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      loginError.classList.remove("visible");
+
+      if (!username || !password) {
+        loginError.textContent = "Please enter both a username and password.";
+        loginError.classList.add("visible");
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Logging in...";
+
+      try {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          loginError.textContent = data.message || "Login failed.";
+          loginError.classList.add("visible");
+          return;
+        }
+
+        // Store the token; every protected request from now on will include it
+        localStorage.setItem("adminToken", data.token);
+        window.location.href = "admin-dashboard.html";
+
+      } catch (error) {
+        console.error(error);
+        loginError.textContent = "Could not reach the server. Is it running?";
+        loginError.classList.add("visible");
+
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Log in";
+      }
+
+    });
+  </script>
+
+</body>
+</html>

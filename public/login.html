@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>NIMC Admin Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
 <style>
@@ -184,7 +185,41 @@
     background: #9AA39C;
     cursor: not-allowed;
   }
+/* ---------- Responsive ---------- */
+  @media (max-width: 480px) {
+    body {
+      padding: 0;
+      align-items: flex-start;
+      overflow-y: auto;
+    }
 
+    .card {
+      max-width: 100%;
+      min-height: 100%;
+      border-radius: 0;
+      border: none;
+    }
+
+    .header {
+      padding: 28px 20px;
+    }
+
+    .body {
+      padding: 24px 20px 8px;
+    }
+
+    .footer {
+      padding: 8px 20px 24px;
+    }
+  }
+
+  @media (max-height: 480px) {
+    body {
+      align-items: flex-start;
+      overflow-y: auto;
+    }
+  }
+  
 </style>
 </head>
 <body>

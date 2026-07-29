@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>NIMC Software Unit Profile Page</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
 <style>
@@ -407,7 +408,56 @@
     font-size: 14px;
     color: #7C867F;
   }
+/* ---------- Responsive ---------- */
+  @media (max-width: 480px) {
+    body {
+      padding: 0;
+      align-items: flex-start;
+      overflow-y: auto;
+    }
 
+    .card {
+      max-width: 100%;
+      max-height: none;
+      border-radius: 0;
+      border: none;
+      overflow-y: visible;
+    }
+
+    .header {
+      padding: 20px 20px 28px;
+    }
+
+    .identity {
+      padding: 24px 20px 16px;
+    }
+
+    .body {
+      padding: 0 20px 20px;
+    }
+
+    .row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .admin-actions {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+
+  @media (max-height: 600px) {
+    body {
+      align-items: flex-start;
+      overflow-y: auto;
+    }
+
+    .card {
+      max-height: none;
+    }
+  }
+  
 </style>
 </head>
 <body>

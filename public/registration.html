@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>NIMC Software Unit Registration Page</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 
   /* ---------- 1. Reset & base styles ---------- */
@@ -257,7 +258,55 @@
     background: #9AA39C;
     cursor: not-allowed;
   }
+/* ---------- Responsive ---------- */
+  @media (max-width: 480px) {
+    body {
+      padding: 0;
+      align-items: flex-start;
+      overflow-y: auto;
+    }
 
+    .card {
+      max-width: 100%;
+      max-height: none;
+      border-radius: 0;
+      border: none;
+      overflow-y: visible;
+    }
+
+    .header {
+      padding: 24px 20px;
+    }
+
+    .body {
+      padding: 16px 20px 6px;
+    }
+
+    .row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .footer {
+      padding: 16px 20px 24px;
+    }
+
+    .upload-wrap {
+      gap: 10px;
+    }
+  }
+
+  @media (max-height: 600px) {
+    body {
+      align-items: flex-start;
+      overflow-y: auto;
+    }
+
+    .card {
+      max-height: none;
+    }
+  }
+  
 </style>
 </head>
 <body>

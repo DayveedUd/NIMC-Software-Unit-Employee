@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NIMC Software Unit</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+  /* ---------- 1. Reset & base ---------- */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: "Work Sans", sans-serif;
+    color: #16241D;
+    background: #F3F1EA url(pattern-bg.svg) repeat;
+  }
+
+  img { display: block; max-width: 100%; }
+
+  /* ---------- 2. Header ---------- */
+  .header {
+    background: #0B6E4F;
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 5px;
+    flex-shrink: 0;
+  }
+
+  .logo-circle img { width: 130%; height: 130%; object-fit: contain; }
+
+  .header-text h1 {
+    color: #ffffff;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.3;
+  }
+
+  .header-text p {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .header-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .header-admin-btn:hover { background: rgba(255, 255, 255, 0.24); }
+  .header-admin-btn svg { width: 15px; height: 15px; }
+
+  /* ---------- 3. Hero section (code-pattern background) ---------- */
+  .hero-section {
+    position: relative;
+    overflow: hidden;
+    padding: 72px 40px 60px;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .hero-copy .eyebrow {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: #16241D;
+    margin-bottom: 8px;
+  }
+
+  .hero-copy h2 {
+    font-family: "Poppins", sans-serif;
+    font-weight: 800;
+    line-height: 1.05;
+    font-size: 52px;
+    color: #16241D;
+  }
+
+  .hero-copy h2 .highlight {
+    display: block;
+    color: #0B6E4F;
+    position: relative;
+    width: fit-content;
+  }
+
+  .hero-copy h2 .highlight::after {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 4px;
+    background: #0B6E4F;
+    border-radius: 2px;
+    margin-top: 10px;
+  }
+
+  .hero-copy p {
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #3F4A44;
+    max-width: 480px;
+  }
+
+  .hero-copy .excited {
+    margin-top: 14px;
+    font-weight: 600;
+    color: #16241D;
+  }
+
+  .hero-actions {
+    margin-top: 28px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0B6E4F;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 26px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-family: inherit;
+    box-shadow: 0 10px 24px rgba(11, 110, 79, 0.22);
+    transition: transform 0.15s ease;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-primary svg { width: 16px; height: 16px; }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    color: #16241D;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 26px;
+    border-radius: 10px;
+    border: 1px solid #D8DBD5;
+    text-decoration: none;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+  }
+
+  .btn-secondary:hover { border-color: #0B6E4F; }
+  .btn-secondary svg { width: 15px; height: 15px; }
+
+  /* ---------- 4. Laptop illustration ----------
+     Built with a locked aspect-ratio so the screen can never stretch
+     out of proportion, regardless of viewport width. Real laptop
+     screens run close to 16:10 -- that's what this uses. */
+  .laptop-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .laptop {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .laptop-screen-frame {
+    background: #2b2f2d;
+    border-radius: 14px 14px 3px 3px;
+    padding: 14px 14px 8px;
+    box-shadow: 0 24px 48px rgba(11, 110, 79, 0.2);
+  }
+
+  .laptop-screen {
+    position: relative;
+    width: 100%;
+    padding-top: 62.5%; /* 8:5 ratio (height = 62.5% of width) -- locks proportions everywhere */
+    background: #16241D;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .laptop-screen-content {
+    position: absolute;
+    inset: 0;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .laptop-dots {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .laptop-dots span { width: 8px; height: 8px; border-radius: 50%; }
+  .laptop-dots span:nth-child(1) { background: #E4626F; }
+  .laptop-dots span:nth-child(2) { background: #E8C468; }
+  .laptop-dots span:nth-child(3) { background: #4FBE8C; }
+
+  .code-snippet {
+    font-family: "Fira Code", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    white-space: pre;
+    color: #C9D4CD;
+    overflow: hidden;
+  }
+
+  .code-snippet .kw { color: #5FD695; }      /* keywords */
+  .code-snippet .fn { color: #8AB4F8; }      /* function names */
+  .code-snippet .str { color: #E8C468; }     /* strings */
+  .code-snippet .cm { color: #5B6660; }      /* comments */
+  .code-snippet .num { color: #E4626F; }     /* numbers/booleans */
+
+  .laptop-hinge {
+    height: 6px;
+    background: linear-gradient(180deg, #3a3f3c, #22261f);
+    border-radius: 0 0 2px 2px;
+  }
+
+  .laptop-base {
+    height: 14px;
+    background: linear-gradient(180deg, #dcdfd9, #b6bbb3);
+    border-radius: 0 0 12px 12px;
+    position: relative;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  }
+
+  .laptop-base::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 5px;
+    background: #9AA39C;
+    border-radius: 0 0 6px 6px;
+  }
+
+  /* Small floating decorative dot, echoing the reference's network dots */
+  .floating-dot {
+    position: absolute;
+    border-radius: 50%;
+    background: #0B6E4F;
+    opacity: 0.15;
+  }
+
+  .floating-dot.d1 { width: 10px; height: 10px; top: 8%; right: 6%; }
+  .floating-dot.d2 { width: 6px; height: 6px; bottom: 12%; right: 14%; }
+  .floating-dot.d3 { width: 8px; height: 8px; bottom: 4%; left: 4%; }
+
+  /* ---------- 5. Feature strip ---------- */
+  .features {
+    background: #EDEAE0;
+    padding: 44px 40px;
+  }
+
+  .features-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+  }
+
+  .feature {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #E3F1EA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .feature-icon svg { width: 20px; height: 20px; stroke: #0B6E4F; }
+
+  .feature h3 {
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .feature p {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #5B6660;
+  }
+
+  /* ---------- 6. Footer ---------- */
+  .footer {
+    background: #0B6E4F;
+    padding: 32px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .footer-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 5px;
+    flex-shrink: 0;
+  }
+
+  .footer-logo img { width: 130%; height: 130%; object-fit: contain; }
+
+  .footer-brand-text h4 {
+    color: #ffffff;
+    font-family: "Poppins", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .footer-brand-text p {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 11.5px;
+    margin-top: 3px;
+    max-width: 260px;
+  }
+
+  .footer-copyright {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  /* ---------- 7. Tablet ---------- */
+  @media (max-width: 960px) {
+
+    .hero-inner {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+
+    .hero-copy p { margin-left: auto; margin-right: auto; }
+    .hero-copy h2 .highlight { margin-left: auto; margin-right: auto; }
+    .hero-actions { justify-content: center; }
+
+    .laptop { max-width: 380px; margin-top: 12px; }
+
+    .features-inner {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+  }
+
+  /* ---------- 8. Mobile ---------- */
+  @media (max-width: 600px) {
+
+    .header {
+      padding: 16px 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .header-left { flex-direction: column; gap: 8px; }
+    .header-text h1 { font-size: 14px; }
+    .header-text p { font-size: 11px; }
+    .header-admin-btn { font-size: 12px; padding: 8px 16px; }
+
+    .hero-section { padding: 48px 20px 40px; }
+
+    .hero-copy h2 { font-size: 34px; }
+    .hero-copy p { font-size: 14px; }
+
+    .hero-actions { flex-direction: column; }
+    .btn-primary, .btn-secondary { justify-content: center; width: 100%; }
+
+    .laptop { max-width: 280px; }
+
+    .features { padding: 32px 20px; }
+    .features-inner { grid-template-columns: 1fr; gap: 24px; }
+
+    .footer {
+      flex-direction: column;
+      text-align: center;
+      padding: 24px 20px;
+    }
+
+    .footer-brand { flex-direction: column; text-align: center; }
+    .footer-copyright { text-align: center; }
+
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-circle">
+        <img src="nimc-logo.jfif" alt="NIMC logo" />
+      </div>
+      <div class="header-text">
+        <h1>National Identity Management Commission</h1>
+        <p>Software Unit</p>
+      </div>
+    </div>
+    <a href="login.html" class="header-admin-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+      </svg>
+      Admin Login
+    </a>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-section">
+
+    <div class="hero-inner">
+
+      <div class="hero-copy">
+        <p class="eyebrow">WELCOME TO THE</p>
+        <h2>
+          NIMC
+          <span class="highlight">Software Unit</span>
+        </h2>
+        <p>
+          Where creativity, technology, and collaboration come together.
+          Whether you are joining us as a corp member or intern, this is
+          an opportunity to grow your skills, explore new technologies,
+          and contribute to meaningful projects.
+        </p>
+        <p class="excited">We are excited to have you on board.</p>
+
+        <div class="hero-actions">
+          <a href="registration.html" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+            </svg>
+            Get Started
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </a>
+          <a href="login.html" class="btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="10" width="16" height="10" rx="2"/>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+            </svg>
+            Admin Login
+          </a>
+        </div>
+      </div>
+
+      <!-- Laptop illustration, locked to correct proportions -->
+      <div class="laptop-wrap">
+        <span class="floating-dot d1"></span>
+        <span class="floating-dot d2"></span>
+        <span class="floating-dot d3"></span>
+
+        <div class="laptop">
+          <div class="laptop-screen-frame">
+            <div class="laptop-screen">
+              <div class="laptop-screen-content">
+                <div class="laptop-dots"><span></span><span></span><span></span></div>
+                <pre class="code-snippet"><span class="cm">// nimc software unit</span>
+<span class="kw">function</span> <span class="fn">welcome</span>(name) {
+  <span class="kw">const</span> role = <span class="str">"intern"</span>;
+  console.log(<span class="str">`Hi ${name}!`</span>);
+  <span class="kw">return</span> <span class="num">true</span>;
+}
+
+<span class="fn">welcome</span>(<span class="str">"David"</span>);</pre>
+              </div>
+            </div>
+          </div>
+          <div class="laptop-hinge"></div>
+          <div class="laptop-base"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Feature strip -->
+  <div class="features">
+    <div class="features-inner">
+
+      <div class="feature">
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+          </svg>
+        </span>
+        <div>
+          <h3>Grow Your Skills</h3>
+          <p>Gain hands-on experience and sharpen your technical and soft skills.</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l-6-6 6-6M15 6l6 6-6 6"/>
+          </svg>
+        </span>
+        <div>
+          <h3>Explore Technology</h3>
+          <p>Work with modern tools and technologies on real-world projects.</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 12l3 3 5-6"/>
+            <circle cx="12" cy="12" r="9"/>
+          </svg>
+        </span>
+        <div>
+          <h3>Collaborate</h3>
+          <p>Learn, share ideas, and build solutions together as one strong team.</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="8"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="12" cy="12" r="0.5" fill="currentColor"/>
+          </svg>
+        </span>
+        <div>
+          <h3>Make an Impact</h3>
+          <p>Contribute to meaningful projects that drive national impact.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <img src="nimc-logo.jfif" alt="NIMC logo" />
+      </div>
+      <div class="footer-brand-text">
+        <h4>National Identity Management Commission</h4>
+        <p>Empowering innovation through technology, collaboration, and continuous learning.</p>
+      </div>
+    </div>
+    <p class="footer-copyright">&copy; 2026 NIMC Software Unit. All Rights Reserved.</p>
+  </div>
+
+</body>
+</html>

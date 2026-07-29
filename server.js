@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
@@ -9,8 +10,10 @@ const app = express();
 app.use(express.json());
 
 
-// Serves your HTML, CSS, images, etc. from the public folder
-app.use(express.static("public"));
+// Serves your HTML, CSS, images, etc. from the public folder.
+// Uses an explicit absolute path (not a relative one) because relative
+// paths can resolve incorrectly in Vercel's serverless environment.
+app.use(express.static(path.join(__dirname, "public")));
 
 
 // Import routes

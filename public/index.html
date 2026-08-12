@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="NIMC-logo.png">
 <style>
 
   /* ---------- 1. Reset & base ---------- */
@@ -26,7 +27,7 @@
 
   img { display: block; max-width: 100%; }
 
-  /* ---------- 2. Header ---------- */
+ /* ---------- 2. Header ---------- */
   .header {
     background: #0B6E4F;
     padding: 18px 40px;
@@ -42,9 +43,16 @@
     gap: 14px;
   }
 
+  /* Added wrapper class to hold the two buttons close together */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Control spacing between the buttons here */
+  }
+
   .logo-circle {
-    width: 48px;
-    height: 48px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     background: #ffffff;
     display: flex;
@@ -55,7 +63,11 @@
     flex-shrink: 0;
   }
 
-  .logo-circle img { width: 130%; height: 130%; object-fit: contain; }
+  .logo-circle img { 
+    width: 150%; 
+    height: 150%; 
+    object-fit: contain; 
+  }
 
   .header-text h1 {
     color: #ffffff;
@@ -71,10 +83,11 @@
     margin-top: 2px;
   }
 
-  .header-admin-btn {
+  .header-admin-btn,
+  .header-employee-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px; /* Added gap between icon and text */
     background: rgba(255, 255, 255, 0.14);
     color: #ffffff;
     font-size: 13px;
@@ -84,13 +97,15 @@
     border-radius: 10px;
     cursor: pointer;
     font-family: inherit;
-    white-space: nowrap;
     text-decoration: none;
     transition: background 0.15s ease;
   }
 
-  .header-admin-btn:hover { background: rgba(255, 255, 255, 0.24); }
-  .header-admin-btn svg { width: 15px; height: 15px; }
+  .header-admin-btn:hover,
+  .header-employee-btn:hover { background: rgba(255, 255, 255, 0.24); }
+
+  .header-admin-btn svg,
+  .header-employee-btn svg { width: 15px; height: 15px; }
 
   /* ---------- 3. Hero section (code-pattern background) ---------- */
   .hero-section {
@@ -404,6 +419,21 @@
     text-align: right;
   }
 
+  .footer-link-container {
+  text-align: right; /* Aligns with the copyright text */
+  margin-bottom: 5px;
+}
+
+.footer-official-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.75rem;
+}
+
+.footer-official-link:hover {
+  opacity: 0.8;
+}
+
   /* ---------- 7. Tablet ---------- */
   @media (max-width: 960px) {
 
@@ -435,9 +465,12 @@
     }
 
     .header-left { flex-direction: column; gap: 8px; }
+    .header-right { justify-content: center; width: 100%; }
     .header-text h1 { font-size: 14px; }
     .header-text p { font-size: 11px; }
-    .header-admin-btn { font-size: 12px; padding: 8px 16px; }
+
+    .header-admin-btn,
+    .header-employee-btn { font-size: 12px; padding: 8px 14px; }
 
     .hero-section { padding: 48px 20px 40px; }
 
@@ -468,24 +501,30 @@
 <body>
 
   <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="logo-circle">
-        <img src="nimc-logo.jfif" alt="NIMC logo" />
-      </div>
-      <div class="header-text">
-        <h1>National Identity Management Commission</h1>
-        <p>Software Unit</p>
-      </div>
+  <!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-circle">
+      <img src="NIMC-logo.png" alt="NIMC logo" />
     </div>
-    <a href="login.html" class="header-admin-btn">
+    <div class="header-text">
+      <h1>National Identity Management Commission</h1>
+      <p>Software Unit</p>
+    </div>
+  </div>
+
+  <!-- Wrap both buttons inside header-right -->
+  <div class="header-right">
+   
+    <a href="employee-login.html" class="header-employee-btn" target="_blank">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="8" r="4"/>
         <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
       </svg>
-      Admin Login
+      Employee Login
     </a>
   </div>
+</div>
 
   <!-- Hero -->
   <div class="hero-section">
@@ -507,7 +546,7 @@
         <p class="excited">We are excited to have you on board.</p>
 
         <div class="hero-actions">
-          <a href="registration.html" class="btn-primary">
+          <a href="registration.html" class="btn-primary" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="8" r="4"/>
               <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
@@ -517,13 +556,7 @@
               <path d="M5 12h14M13 5l7 7-7 7"/>
             </svg>
           </a>
-          <a href="login.html" class="btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="4" y="10" width="16" height="10" rx="2"/>
-              <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
-            </svg>
-            Admin Login
-          </a>
+         
         </div>
       </div>
 
@@ -617,17 +650,23 @@
     </div>
   </div>
 
-  <!-- Footer -->
+ <!-- Footer -->
   <div class="footer">
     <div class="footer-brand">
       <div class="footer-logo">
-        <img src="nimc-logo.jfif" alt="NIMC logo" />
+        <img src="nimc-logo.png" alt="NIMC logo" />
       </div>
       <div class="footer-brand-text">
         <h4>National Identity Management Commission</h4>
         <p>Empowering innovation through technology, collaboration, and continuous learning.</p>
       </div>
     </div>
+    <!-- Added NIMC Link -->
+    <p class="footer-link-container">
+      <a href="https://nimc.gov.ng/" target="_blank" rel="noopener noreferrer" class="footer-official-link">
+        Visit Official Website: nimc.gov.ng
+      </a>
+    </p>
     <p class="footer-copyright">&copy; 2026 NIMC Software Unit. All Rights Reserved.</p>
   </div>
 

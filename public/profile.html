@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="NIMC-logo.png">
 <style>
 
   /* ---------- 1. Reset & base styles ---------- */
@@ -84,8 +85,8 @@
   }
 
   .logo-circle img {
-    width: 130%;
-    height: 130%;
+    width: 120%;
+    height: 120%;
     object-fit: contain;
   }
 
@@ -206,11 +207,7 @@
     max-width: 200px;
   }
 
-  .editing .position-select {
-    display: block;
-  }
-
-  /* ---------- Admin action buttons (Edit / Delete / Save / Cancel) ---------- */
+  /* ---------- Action buttons (Edit / Delete / Save / Cancel) ---------- */
   .admin-actions {
     display: flex;
     gap: 10px;
@@ -342,7 +339,7 @@
     align-items: center;
   }
 
-  /* Editable inputs, styled to match the registration form, hidden until edit mode */
+  /* Editable inputs, styled to match registration form */
   .field .edit-input {
     display: none;
     width: 100%;
@@ -401,14 +398,81 @@
     color: #ffffff;
   }
 
-  /* ---------- 7. Loading / error state ---------- */
+  /* ---------- 7. Image Modal / Lightbox ---------- */
+  .avatar {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .avatar:hover {
+    transform: scale(1.05);
+  }
+
+  .image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .image-modal.active {
+    display: flex;
+  }
+
+  .image-modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .image-modal img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 12px;
+  }
+
+  .image-modal-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+  }
+
+  .image-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* ---------- 8. Loading / error state ---------- */
   .status-message {
     padding: 60px 28px;
     text-align: center;
     font-size: 14px;
     color: #7C867F;
   }
-/* ---------- Responsive ---------- */
+
+  /* ---------- Responsive ---------- */
   @media (max-width: 480px) {
     body {
       padding: 0;
@@ -445,6 +509,12 @@
       flex-wrap: wrap;
       justify-content: center;
     }
+
+    .image-modal-close {
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.3);
+    }
   }
 
   @media (max-height: 600px) {
@@ -457,30 +527,29 @@
       max-height: none;
     }
   }
-  
 </style>
 </head>
 <body>
 
   <div class="card" id="profileCard">
 
-    <!-- Green header with back button, logo, title -->
+    <!-- Green header with back button and logo -->
     <div class="header">
-      <button type="button" class="back-btn" onclick="window.location.href='admin-dashboard.html'">
+      <button type="button" class="back-btn" id="backBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
           <path d="M15 18l-6-6 6-6"/>
         </svg>
       </button>
       <div class="logo-circle">
-        <img src="nimc-logo.jfif" alt="NIMC logo" />
+        <img src="NIMC-logo.png" alt="NIMC logo" />
       </div>
       <h1>Employee Profile</h1>
     </div>
 
-    <!-- Shown while fetching, or if the employee can't be found/loaded -->
+    <!-- Loading / error indicator -->
     <p class="status-message" id="statusMessage">Loading profile...</p>
 
-    <!-- Actual profile content -- hidden until data loads successfully -->
+    <!-- Main profile content -->
     <div id="profileContent" style="display: none;">
 
       <!-- Avatar, name, role badge -->
@@ -493,7 +562,6 @@
               <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
             </svg>
           </span>
-          <!-- Only visible while editing; opens the file picker below -->
           <label for="photoInput" class="avatar-edit-btn" title="Change photo">
             <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
               <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
@@ -506,7 +574,7 @@
         <div class="name" id="fullName"></div>
         <span class="badge" id="positionBadge"></span>
 
-        <!-- Editable name fields -- shown only in edit mode -->
+        <!-- Editable name & position fields -->
         <div class="name-input-row">
           <input type="text" class="edit-input" id="firstNameInput" placeholder="First name" style="display:block;">
           <input type="text" class="edit-input" id="lastNameInput" placeholder="Last name" style="display:block;">
@@ -516,16 +584,18 @@
           <option>Intern</option>
         </select>
 
-        <!-- Admin action buttons -->
+        <!-- Action buttons -->
         <div class="admin-actions">
           <div class="view-mode-actions">
+            <!-- Edit button: Employees only -->
             <button type="button" class="action-btn edit" id="editBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 20h9"/>
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
               Edit
             </button>
+            <!-- Delete button: Admin only -->
             <button type="button" class="action-btn delete" id="deleteBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 6h18"/>
@@ -594,253 +664,306 @@
 
   </div>
 
+  <!-- Image Lightbox Modal -->
+  <div class="image-modal" id="imageModal">
+    <div class="image-modal-content">
+      <button class="image-modal-close" id="modalCloseBtn">&times;</button>
+      <img id="modalImage" alt="Profile photo" />
+    </div>
+  </div>
+
   <script>
-    // ---------------------------------------------------------------
-    // AUTH GUARD -- must be logged in to view/edit/delete a profile
-    // ---------------------------------------------------------------
-    const adminToken = localStorage.getItem("adminToken");
+// ---------------------------------------------------------------
+// 1. AUTH GUARD & ROLE DETECTION
+// ---------------------------------------------------------------
+const adminToken = localStorage.getItem("adminToken");
+const employeeToken = localStorage.getItem("employeeToken");
 
-    if (!adminToken) {
-      window.location.href = "login.html";
+if (!adminToken && !employeeToken) {
+  window.location.href = "employee-login.html";
+}
+
+const isAdmin = Boolean(adminToken);
+const activeToken = adminToken || employeeToken;
+
+const params = new URLSearchParams(window.location.search);
+const urlEmployeeId = params.get("id");
+const targetEmployeeId = isAdmin ? (urlEmployeeId || localStorage.getItem("employeeId")) : localStorage.getItem("employeeId");
+
+const statusMessage = document.getElementById("statusMessage");
+const profileContent = document.getElementById("profileContent");
+const profileCard = document.getElementById("profileCard");
+
+const editBtn = document.getElementById("editBtn");
+const deleteBtn = document.getElementById("deleteBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+const saveBtn = document.getElementById("saveBtn");
+const photoInput = document.getElementById("photoInput");
+const avatar = document.getElementById("avatar");
+const backBtn = document.getElementById("backBtn");
+
+let currentEmployee = null;
+let selectedPhotoFile = null;
+
+// Adjust button visibility based on role
+if (!isAdmin) {
+  // Employee View: Show Edit button, hide Delete button
+  if (editBtn) editBtn.style.display = "inline-flex";
+  if (deleteBtn) deleteBtn.style.display = "none";
+  
+  if (backBtn) {
+    backBtn.onclick = function () {
+      localStorage.removeItem("employeeToken");
+      localStorage.removeItem("employeeId");
+      window.location.href = "employee-login.html";
+    };
+  }
+} else {
+  // Admin View: Hide Edit button, show Delete button
+  if (editBtn) editBtn.style.display = "none";
+  if (deleteBtn) deleteBtn.style.display = "inline-flex";
+
+  if (backBtn) {
+    backBtn.onclick = function () {
+      window.location.href = "admin-dashboard.html";
+    };
+  }
+}
+
+// ---------------------------------------------------------------
+// 2. RENDER & LOAD PROFILE DATA
+// ---------------------------------------------------------------
+function renderProfile(data) {
+  currentEmployee = data;
+
+  const fullName = `${data.firstName} ${data.lastName}`;
+  document.getElementById("fullName").textContent = fullName;
+  document.getElementById("positionBadge").textContent = data.position;
+  document.getElementById("phoneValue").textContent = data.phone;
+  document.getElementById("emailValue").textContent = data.email;
+  document.getElementById("schoolValue").textContent = data.school;
+  document.getElementById("disciplineValue").textContent = data.discipline;
+  document.getElementById("skillValue").textContent = data.skill;
+
+  document.querySelectorAll(".day").forEach(dayEl => {
+    dayEl.classList.toggle("active", data.workDays ? data.workDays.includes(dayEl.dataset.day) : false);
+  });
+
+  avatar.innerHTML = data.photoUrl
+    ? `<img src="${data.photoUrl}" alt="${fullName}" />`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="#0B6E4F" stroke-width="2">
+         <circle cx="12" cy="8" r="4"/>
+         <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+       </svg>`;
+
+  statusMessage.style.display = "none";
+  profileContent.style.display = "block";
+}
+
+async function loadProfile() {
+  if (!targetEmployeeId) {
+    statusMessage.textContent = "No employee profile selected.";
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/employees/${targetEmployeeId}`, {
+      headers: {
+        "Authorization": `Bearer ${activeToken}`
+      }
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("employeeToken");
+      window.location.href = "employee-login.html";
+      return;
     }
 
-    const statusMessage = document.getElementById("statusMessage");
-    const profileContent = document.getElementById("profileContent");
-    const profileCard = document.getElementById("profileCard");
+    if (response.status === 404) {
+      statusMessage.textContent = "Employee profile not found.";
+      return;
+    }
 
-    const editBtn = document.getElementById("editBtn");
-    const deleteBtn = document.getElementById("deleteBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const saveBtn = document.getElementById("saveBtn");
-    const photoInput = document.getElementById("photoInput");
-    const avatar = document.getElementById("avatar");
+    if (!response.ok) {
+      throw new Error("Failed to load employee profile");
+    }
 
-    let currentEmployee = null;   // the last-loaded data from the server
-    let selectedPhotoFile = null; // a newly chosen photo, if any, while editing
+    const employee = await response.json();
+    renderProfile(employee);
 
-    // Read the employee's MongoDB _id from the URL, e.g. profile.html?id=64f...
-    const params = new URLSearchParams(window.location.search);
-    const employeeId = params.get("id");
+  } catch (error) {
+    console.error(error);
+    statusMessage.textContent = "Could not load profile. Is the server running?";
+  }
+}
 
-    // ---------------------------------------------------------------
-    // DISPLAY (view mode)
-    // ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// 3. EDIT MODE HANDLERS
+// ---------------------------------------------------------------
+function enterEditMode() {
+  document.getElementById("firstNameInput").value = currentEmployee.firstName || "";
+  document.getElementById("lastNameInput").value = currentEmployee.lastName || "";
+  document.getElementById("positionInput").value = currentEmployee.position || "Intern";
+  document.getElementById("phoneInput").value = currentEmployee.phone || "";
+  document.getElementById("emailInput").value = currentEmployee.email || "";
+  document.getElementById("schoolInput").value = currentEmployee.school || "";
+  document.getElementById("disciplineInput").value = currentEmployee.discipline || "";
+  document.getElementById("skillInput").value = currentEmployee.skill || "";
 
-    function renderProfile(data) {
-      currentEmployee = data;
+  selectedPhotoFile = null;
+  photoInput.value = "";
 
-      const fullName = `${data.firstName} ${data.lastName}`;
-      document.getElementById("fullName").textContent = fullName;
-      document.getElementById("positionBadge").textContent = data.position;
-      document.getElementById("phoneValue").textContent = data.phone;
-      document.getElementById("emailValue").textContent = data.email;
-      document.getElementById("schoolValue").textContent = data.school;
-      document.getElementById("disciplineValue").textContent = data.discipline;
-      document.getElementById("skillValue").textContent = data.skill;
+  profileCard.classList.add("editing");
+}
 
-      document.querySelectorAll(".day").forEach(dayEl => {
-        dayEl.classList.toggle("active", data.workDays.includes(dayEl.dataset.day));
+function exitEditMode() {
+  profileCard.classList.remove("editing");
+  selectedPhotoFile = null;
+}
+
+if (editBtn) {
+  editBtn.addEventListener("click", enterEditMode);
+}
+
+cancelBtn.addEventListener("click", function () {
+  exitEditMode();
+  renderProfile(currentEmployee);
+});
+
+document.querySelectorAll(".day").forEach(dayEl => {
+  dayEl.addEventListener("click", function () {
+    if (profileCard.classList.contains("editing")) {
+      this.classList.toggle("active");
+    }
+  });
+});
+
+photoInput.addEventListener("change", function () {
+  if (this.files && this.files.length > 0) {
+    selectedPhotoFile = this.files[0];
+    const previewUrl = URL.createObjectURL(selectedPhotoFile);
+    avatar.innerHTML = `<img src="${previewUrl}" alt="New photo preview" />`;
+  }
+});
+
+// ---------------------------------------------------------------
+// 4. SAVE PROFILE (PUT /api/employees/:id)
+// ---------------------------------------------------------------
+saveBtn.addEventListener("click", async function () {
+  const formData = new FormData();
+  formData.append("firstName", document.getElementById("firstNameInput").value.trim());
+  formData.append("lastName", document.getElementById("lastNameInput").value.trim());
+  formData.append("position", document.getElementById("positionInput").value);
+  formData.append("phone", document.getElementById("phoneInput").value.trim());
+  formData.append("email", document.getElementById("emailInput").value.trim());
+  formData.append("school", document.getElementById("schoolInput").value.trim());
+  formData.append("discipline", document.getElementById("disciplineInput").value.trim());
+  formData.append("skill", document.getElementById("skillInput").value.trim());
+
+  document.querySelectorAll(".day.active").forEach(day => {
+    formData.append("workDays", day.dataset.day);
+  });
+
+  if (selectedPhotoFile) {
+    formData.append("photo", selectedPhotoFile);
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    const response = await fetch(`/api/employees/${targetEmployeeId}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${activeToken}`
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Update failed.");
+      return;
+    }
+
+    exitEditMode();
+    renderProfile(data.employee);
+
+  } catch (error) {
+    console.error(error);
+    alert("Update failed. Is the server running?");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save changes";
+  }
+});
+
+// ---------------------------------------------------------------
+// 5. DELETE PROFILE (Admin Only)
+// ---------------------------------------------------------------
+if (deleteBtn) {
+  deleteBtn.addEventListener("click", async function () {
+    if (!isAdmin) return;
+
+    const fullName = currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : "this employee";
+    const confirmed = confirm(`Delete ${fullName}? This can't be undone.`);
+
+    if (!confirmed) return;
+
+    deleteBtn.disabled = true;
+
+    try {
+      const response = await fetch(`/api/employees/${targetEmployeeId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${adminToken}`
+        }
       });
 
-      avatar.innerHTML = data.photoUrl
-        ? `<img src="${data.photoUrl}" alt="${fullName}" />`
-        : `<svg viewBox="0 0 24 24" fill="none" stroke="#0B6E4F" stroke-width="2">
-             <circle cx="12" cy="8" r="4"/>
-             <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
-           </svg>`;
+      const data = await response.json();
 
-      statusMessage.style.display = "none";
-      profileContent.style.display = "block";
-    }
-
-    async function loadProfile() {
-      if (!employeeId) {
-        statusMessage.textContent = "No employee selected.";
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/employees/${employeeId}`, {
-          headers: {
-            "Authorization": `Bearer ${adminToken}`
-          }
-        });
-
-        if (response.status === 401) {
-          localStorage.removeItem("adminToken");
-          window.location.href = "login.html";
-          return;
-        }
-
-        if (response.status === 404) {
-          statusMessage.textContent = "Employee not found.";
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("Failed to load employee");
-        }
-
-        const employee = await response.json();
-        renderProfile(employee);
-
-      } catch (error) {
-        console.error(error);
-        statusMessage.textContent = "Could not load profile. Is the server running?";
-      }
-    }
-
-    // ---------------------------------------------------------------
-    // EDIT MODE
-    // ---------------------------------------------------------------
-
-    function enterEditMode() {
-      // Pre-fill every input with the currently displayed data
-      document.getElementById("firstNameInput").value = currentEmployee.firstName;
-      document.getElementById("lastNameInput").value = currentEmployee.lastName;
-      document.getElementById("positionInput").value = currentEmployee.position;
-      document.getElementById("phoneInput").value = currentEmployee.phone;
-      document.getElementById("emailInput").value = currentEmployee.email;
-      document.getElementById("schoolInput").value = currentEmployee.school;
-      document.getElementById("disciplineInput").value = currentEmployee.discipline;
-      document.getElementById("skillInput").value = currentEmployee.skill;
-
-      selectedPhotoFile = null;
-      photoInput.value = "";
-
-      profileCard.classList.add("editing");
-    }
-
-    function exitEditMode() {
-      profileCard.classList.remove("editing");
-      selectedPhotoFile = null;
-    }
-
-    editBtn.addEventListener("click", enterEditMode);
-
-    cancelBtn.addEventListener("click", function () {
-      exitEditMode();
-      renderProfile(currentEmployee); // discard any unsaved changes, redraw from last known-good data
-    });
-
-    // Work day circles become clickable only while editing
-    document.querySelectorAll(".day").forEach(dayEl => {
-      dayEl.addEventListener("click", function () {
-        if (profileCard.classList.contains("editing")) {
-          this.classList.toggle("active");
-        }
-      });
-    });
-
-    // Preview a newly chosen photo immediately, before saving
-    photoInput.addEventListener("change", function () {
-      if (this.files && this.files.length > 0) {
-        selectedPhotoFile = this.files[0];
-        const previewUrl = URL.createObjectURL(selectedPhotoFile);
-        avatar.innerHTML = `<img src="${previewUrl}" alt="New photo preview" />`;
-      }
-    });
-
-    // ---------------------------------------------------------------
-    // SAVE (PUT /api/employees/:id)
-    // ---------------------------------------------------------------
-
-    saveBtn.addEventListener("click", async function () {
-
-      const formData = new FormData();
-      formData.append("firstName", document.getElementById("firstNameInput").value.trim());
-      formData.append("lastName", document.getElementById("lastNameInput").value.trim());
-      formData.append("position", document.getElementById("positionInput").value);
-      formData.append("phone", document.getElementById("phoneInput").value.trim());
-      formData.append("email", document.getElementById("emailInput").value.trim());
-      formData.append("school", document.getElementById("schoolInput").value.trim());
-      formData.append("discipline", document.getElementById("disciplineInput").value.trim());
-      formData.append("skill", document.getElementById("skillInput").value.trim());
-
-      document.querySelectorAll(".day.active").forEach(day => {
-        formData.append("workDays", day.dataset.day);
-      });
-
-      if (selectedPhotoFile) {
-        formData.append("photo", selectedPhotoFile);
-      }
-
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Saving...";
-
-      try {
-        const response = await fetch(`/api/employees/${employeeId}`, {
-          method: "PUT",
-          headers: {
-            "Authorization": `Bearer ${adminToken}`
-          },
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.message || "Update failed.");
-          return;
-        }
-
-        exitEditMode();
-        renderProfile(data.employee);
-
-      } catch (error) {
-        console.error(error);
-        alert("Update failed. Is the server running?");
-
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save changes";
-      }
-
-    });
-
-    // ---------------------------------------------------------------
-    // DELETE (DELETE /api/employees/:id)
-    // ---------------------------------------------------------------
-
-    deleteBtn.addEventListener("click", async function () {
-
-      const fullName = currentEmployee ? `${currentEmployee.firstName} ${currentEmployee.lastName}` : "this employee";
-      const confirmed = confirm(`Delete ${fullName}? This can't be undone.`);
-
-      if (!confirmed) {
-        return;
-      }
-
-      deleteBtn.disabled = true;
-
-      try {
-        const response = await fetch(`/api/employees/${employeeId}`, {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${adminToken}`
-          }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          alert(data.message || "Delete failed.");
-          deleteBtn.disabled = false;
-          return;
-        }
-
-        alert(data.message);
-        window.location.href = "admin-dashboard.html";
-
-      } catch (error) {
-        console.error(error);
-        alert("Delete failed. Is the server running?");
+      if (!response.ok) {
+        alert(data.message || "Delete failed.");
         deleteBtn.disabled = false;
+        return;
       }
 
-    });
+      alert(data.message);
+      window.location.href = "admin-dashboard.html";
 
-    loadProfile();
+    } catch (error) {
+      console.error(error);
+      alert("Delete failed. Is the server running?");
+      deleteBtn.disabled = false;
+    }
+  });
+}
+
+// ---------------------------------------------------------------
+// 6. LIGHTBOX MODAL
+// ---------------------------------------------------------------
+const imageModal = document.getElementById("imageModal");
+const modalImage = document.getElementById("modalImage");
+const modalCloseBtn = document.getElementById("modalCloseBtn");
+
+avatar.addEventListener("click", function () {
+  if (profileCard.classList.contains("editing")) return;
+  const img = avatar.querySelector("img");
+  if (img) {
+    modalImage.src = img.src;
+    imageModal.classList.add("active");
+  }
+});
+
+modalCloseBtn.addEventListener("click", () => imageModal.classList.remove("active"));
+imageModal.addEventListener("click", (e) => {
+  if (e.target === imageModal) imageModal.classList.remove("active");
+});
+
+// Initialize
+loadProfile();
   </script>
 
 </body>

@@ -1,22 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const bcrypt = require("bcryptjs");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 const Employee = require("../models/Employee");
 const verifyToken = require("../middleware/auth");
 const cloudinary = require("../config/cloudinary");
 
-
-// ---------- Multer setup: photos now upload straight to Cloudinary ----------
-// instead of being written to local disk, so they survive redeploys/restarts.
-
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: "nimc-employees",          // groups all uploads in one Cloudinary folder
+        folder: "nimc-employees",
         allowed_formats: ["jpg", "jpeg", "png", "webp"],
-        transformation: [{ width: 500, height: 500, crop: "limit" }] // caps size, saves storage
+        transformation: [{ width: 500, height: 500, crop: "limit" }]
     }
 });
 
@@ -32,49 +29,41 @@ const upload = multer({
     }
 });
 
-
-// Register employee (now accepts multipart/form-data with an optional photo)
+// ---------------------------------------------------------------
+// REGISTER EMPLOYEE
+// ---------------------------------------------------------------
 router.post("/register", upload.single("photo"), async (req, res) => {
-
     try {
-
         const employeeData = { ...req.body };
 
-        // multer-storage-cloudinary puts the hosted photo's URL on req.file.path
-        // and its Cloudinary identifier (needed later for deletion) on req.file.filename
         if (req.file) {
             employeeData.photoUrl = req.file.path;
             employeeData.photoPublicId = req.file.filename;
         }
 
-        // workDays arrives as individual form fields when sent via FormData,
-        // so make sure it's always stored as an array
         if (employeeData.workDays && !Array.isArray(employeeData.workDays)) {
             employeeData.workDays = [employeeData.workDays];
         }
 
-        const employee = new Employee(employeeData);
+        // Hash password before saving
+        if (employeeData.password) {
+            employeeData.password = await bcrypt.hash(employeeData.password, 10);
+        }
 
+        const employee = new Employee(employeeData);
         await employee.save();
 
         res.status(201).json({
             message: "Employee registered successfully"
         });
 
-
     } catch (error) {
-
-        // Duplicate email: MongoDB throws a specific error code (11000)
-        // when a "unique" field like email already exists
         if (error.code === 11000) {
             return res.status(409).json({
-                message: "That email is already registered."
+                message: "That username or email is already registered."
             });
         }
 
-        // Mongoose validation errors (e.g. a required field was missing/invalid)
-        // come back as an object of per-field messages -- collect them into
-        // one clean, readable string instead of a raw error dump
         if (error.name === "ValidationError") {
             const messages = Object.values(error.errors).map(e => e.message);
             return res.status(400).json({
@@ -82,110 +71,109 @@ router.post("/register", upload.single("photo"), async (req, res) => {
             });
         }
 
-        // Multer errors (e.g. file too large, wrong file type)
         if (error.message === "Only image files are allowed") {
             return res.status(400).json({
                 message: error.message
             });
         }
 
-        // Anything else unexpected
         console.error(error);
         res.status(500).json({
             message: "Something went wrong on our end. Please try again."
         });
-
     }
-
 });
-// Get all employees -- admin-only
+
+// ---------------------------------------------------------------
+// GET ALL EMPLOYEES (Admin Only)
+// ---------------------------------------------------------------
 router.get("/", verifyToken, async (req, res) => {
-
     try {
+        if (req.user.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
 
-        const employees = await Employee.find();
-
+        const employees = await Employee.find().select("-password");
         res.json(employees);
 
     } catch(error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+        res.status(500).json({ message: error.message });
     }
-
 });
 
-
-// Get single employee by ID -- admin-only
+// ---------------------------------------------------------------
+// GET SINGLE EMPLOYEE (Admin OR Self)
+// ---------------------------------------------------------------
 router.get("/:id", verifyToken, async (req, res) => {
-
     try {
+        const requestedId = req.params.id;
+        const isSelf = req.user.role === "employee" && req.user.id === requestedId;
+        const isAdmin = req.user.role === "admin";
 
-        const employee = await Employee.findById(req.params.id);
+        if (!isAdmin && !isSelf) {
+            return res.status(403).json({ message: "Access denied. You can only view your own profile." });
+        }
+
+        const employee = await Employee.findById(requestedId).select("-password");
 
         if (!employee) {
-            return res.status(404).json({
-                message: "Employee not found"
-            });
+            return res.status(404).json({ message: "Employee not found" });
         }
 
         res.json(employee);
 
     } catch(error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
+        res.status(500).json({ message: error.message });
     }
-
 });
 
-
-// Update an employee -- admin-only (admin edits a profile; photo re-upload is optional)
+// ---------------------------------------------------------------
+// UPDATE EMPLOYEE (Admin OR Self)
+// ---------------------------------------------------------------
 router.put("/:id", verifyToken, upload.single("photo"), async (req, res) => {
-
     try {
+        const targetId = req.params.id;
+        const isSelf = req.user.role === "employee" && req.user.id === targetId;
+        const isAdmin = req.user.role === "admin";
 
-        const employee = await Employee.findById(req.params.id);
+        if (!isAdmin && !isSelf) {
+            return res.status(403).json({ message: "Access denied. You can only update your own profile." });
+        }
+
+        const employee = await Employee.findById(targetId);
 
         if (!employee) {
-            return res.status(404).json({
-                message: "Employee not found"
-            });
+            return res.status(404).json({ message: "Employee not found" });
         }
 
         const updates = { ...req.body };
 
-        // workDays arrives as individual form fields when sent via FormData,
-        // so make sure it's always stored as an array (same as /register)
         if (updates.workDays && !Array.isArray(updates.workDays)) {
             updates.workDays = [updates.workDays];
         } else if (!updates.workDays) {
-            // If no work days were checked, FormData won't send the field at
-            // all -- treat that as "cleared", not "leave unchanged"
             updates.workDays = [];
         }
 
-        // Only replace the photo if a new one was actually uploaded;
-        // otherwise leave the existing photoUrl alone
+        // Hash new password if supplied in updates
+        if (updates.password) {
+            updates.password = await bcrypt.hash(updates.password, 10);
+        } else {
+            delete updates.password; // Prevent overwriting with empty string
+        }
+
         if (req.file) {
-            // Delete the old photo from Cloudinary (not local disk) so old
-            // uploads don't pile up in your Cloudinary account
             if (employee.photoPublicId) {
-                cloudinary.uploader.destroy(employee.photoPublicId).catch(() => {}); // ignore errors
+                cloudinary.uploader.destroy(employee.photoPublicId).catch(() => {});
             }
             updates.photoUrl = req.file.path;
             updates.photoPublicId = req.file.filename;
         }
 
         const updatedEmployee = await Employee.findByIdAndUpdate(
-            req.params.id,
+            targetId,
             updates,
-            { new: true, runValidators: true } // return the updated doc, and re-check schema rules
-        );
+            { new: true, runValidators: true }
+        ).select("-password");
 
         res.json({
             message: "Employee updated successfully",
@@ -193,62 +181,45 @@ router.put("/:id", verifyToken, upload.single("photo"), async (req, res) => {
         });
 
     } catch (error) {
-
         if (error.code === 11000) {
-            return res.status(409).json({
-                message: "That email is already registered to another employee."
-            });
+            return res.status(409).json({ message: "Username or email is already taken." });
         }
 
         if (error.name === "ValidationError") {
             const messages = Object.values(error.errors).map(e => e.message);
-            return res.status(400).json({
-                message: messages.join(" ")
-            });
+            return res.status(400).json({ message: messages.join(" ") });
         }
 
         console.error(error);
-        res.status(500).json({
-            message: "Something went wrong on our end. Please try again."
-        });
-
+        res.status(500).json({ message: "Something went wrong on our end. Please try again." });
     }
-
 });
 
-
-// Delete an employee -- admin-only
+// ---------------------------------------------------------------
+// DELETE EMPLOYEE (Admin Only)
+// ---------------------------------------------------------------
 router.delete("/:id", verifyToken, async (req, res) => {
-
     try {
+        if (req.user.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
 
         const employee = await Employee.findByIdAndDelete(req.params.id);
 
         if (!employee) {
-            return res.status(404).json({
-                message: "Employee not found"
-            });
+            return res.status(404).json({ message: "Employee not found" });
         }
 
-        // Clean up their Cloudinary photo too, if they had one
         if (employee.photoPublicId) {
-            cloudinary.uploader.destroy(employee.photoPublicId).catch(() => {}); // ignore errors
+            cloudinary.uploader.destroy(employee.photoPublicId).catch(() => {});
         }
 
-        res.json({
-            message: "Employee deleted successfully"
-        });
+        res.json({ message: "Employee deleted successfully" });
 
     } catch (error) {
-
         console.error(error);
-        res.status(500).json({
-            message: "Something went wrong on our end. Please try again."
-        });
-
+        res.status(500).json({ message: "Something went wrong on our end. Please try again." });
     }
-
 });
-
 
 module.exports = router;

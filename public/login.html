@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="NIMC-logo.png">
 <style>
 
   * {
@@ -45,21 +46,21 @@
   }
 
   .logo-circle {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 12px;
-    padding: 6px;
+    padding: 8px;
     overflow: hidden;
   }
 
   .logo-circle img {
-    width: 130%;
-    height: 130%;
+    width: 120%;
+    height: 120%;
     object-fit: contain;
   }
 
@@ -162,6 +163,9 @@
 
   .footer {
     padding: 8px 28px 28px;
+     display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .login-btn {
@@ -184,6 +188,59 @@
   .login-btn:disabled {
     background: #9AA39C;
     cursor: not-allowed;
+  }
+
+   .employee-link {
+    text-align: center;
+    border-top: 1px solid #E4E6E0;
+    padding-top: 12px;
+    color: #9AA39C;
+    font-size: 12px;
+  }
+
+  .employee-link a {
+    color: #0B6E4F;
+    text-decoration: none;
+  }
+
+  .employee-link a:hover {
+    text-decoration: underline;
+  }
+
+   /* ---------- 7. Footer section ---------- */
+  .footer {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 24px;
+    margin-top: auto;
+    background: transparent;
+    flex-wrap: wrap;
+  }
+
+  .footer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0B6E4F;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.3s ease;
+  }
+
+  .footer-btn:hover {
+    background: #095C42;
+  }
+
+  .footer-btn svg {
+    width: 16px;
+    height: 16px;
   }
 /* ---------- Responsive ---------- */
   @media (max-width: 480px) {
@@ -228,7 +285,7 @@
 
     <div class="header">
       <div class="logo-circle">
-        <img src="nimc-logo.jfif" alt="NIMC logo" />
+        <img src="NIMC-logo.png" alt="NIMC logo" />
       </div>
       <h1>Admin login</h1>
       <p>Sign in to manage registered employees</p>
@@ -256,9 +313,14 @@
 
     <div class="footer">
       <button type="submit" class="login-btn" id="loginBtn">Log in</button>
+       <div class="employee-link">
+        <a href="/employee-login.html">Employee Login</a>
+      </div>
     </div>
 
   </form>
+
+    </div>
 
   <script>
     // Toggle the password field between hidden (dots) and visible (plain text)
@@ -342,6 +404,7 @@
         loginBtn.textContent = "Log in";
       }
 
+ 
     });
   </script>
 

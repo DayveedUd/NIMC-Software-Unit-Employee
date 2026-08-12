@@ -12,6 +12,16 @@ const employeeSchema = new mongoose.Schema({
         required: true
     },
 
+    username: { 
+        type: String, 
+        required: true, unique: true 
+    },
+
+    password: { 
+        type: String, 
+        required: true 
+    }, // Hashed password
+
     position: {
         type: String,
         required: true

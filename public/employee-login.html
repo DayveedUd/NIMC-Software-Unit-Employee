@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NIMC Employee Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/jpeg" href="NIMC-logo.png">
+<style>
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: "Work Sans", sans-serif;
+    background: #F3F1EA url(pattern-bg.svg) repeat;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .card {
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #E4E6E0;
+    overflow: hidden;
+  }
+
+  .header {
+    background: #0B6E4F;
+    padding: 32px 32px 32px;
+    text-align: center;
+  }
+
+  .logo-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    padding: 8px;
+    overflow: hidden;
+  }
+
+  .logo-circle img {
+    width: 120%;
+    height: 120%;
+    object-fit: contain;
+  }
+
+  .header h1 {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: "Poppins", sans-serif;
+  }
+
+  .header p {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  .body {
+    padding: 28px 28px 8px;
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: #5B6660;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #D8DBD5;
+    border-radius: 8px;
+    font-family: inherit;
+    color: #5B6660;
+  }
+
+  .field input::placeholder {
+    color: #9AA39C;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: #0B6E4F;
+    box-shadow: 0 0 0 3px rgba(11, 110, 79, 0.1);
+  }
+
+  .error-message {
+    display: none;
+    color: #C74E4E;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .error-message.visible {
+    display: block;
+  }
+
+  .remember-me {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #5B6660;
+    margin: 16px 0 24px 0;
+  }
+
+  .remember-me input {
+    width: auto;
+    margin-right: 8px;
+  }
+
+  .status-message {
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+  }
+
+  .status-message.success {
+    display: block;
+    background: #E8F5E9;
+    color: #2E7D32;
+    border: 1px solid #C8E6C9;
+  }
+
+  .status-message.error {
+    display: block;
+    background: #FFEBEE;
+    color: #C62828;
+    border: 1px solid #FFCDD2;
+  }
+
+  .footer {
+    padding: 20px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .login-btn {
+    background: #0B6E4F;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .login-btn:hover {
+    background: #084a36;
+  }
+
+  .login-btn:disabled {
+    background: #9AA39C;
+    cursor: not-allowed;
+  }
+
+  .signup-link {
+    text-align: center;
+    color: #5B6660;
+    font-size: 13px;
+  }
+
+  .signup-link a {
+    color: #0B6E4F;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .signup-link a:hover {
+    text-decoration: underline;
+  }
+
+  .admin-link {
+    text-align: center;
+    border-top: 1px solid #E4E6E0;
+    padding-top: 12px;
+    color: #9AA39C;
+    font-size: 12px;
+  }
+
+  .admin-link a {
+    color: #0B6E4F;
+    text-decoration: none;
+  }
+
+  .admin-link a:hover {
+    text-decoration: underline;
+  }
+
+</style>
+</head>
+<body>
+
+  <form class="card" id="loginForm">
+
+    <div class="header">
+      <div class="logo-circle">
+        <img src="nimc-logo.png" alt="NIMC logo" />
+      </div>
+      <h1>Employee Login</h1>
+      <p>Access your profile and details</p>
+    </div>
+
+    <div class="body">
+
+      <div class="status-message" id="statusMessage"></div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter your username" autocomplete="username" />
+        <span class="error-message" id="usernameError">Username is required</span>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+        <span class="error-message" id="passwordError">Password is required</span>
+      </div>
+
+      <div class="remember-me">
+        <input type="checkbox" id="rememberMe" />
+        <label for="rememberMe" style="margin: 0;">Remember me</label>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <button type="submit" class="login-btn" id="loginBtn">Login</button>
+      <div class="signup-link">
+        Don't have an account? <a href="/registration.html">Create one</a>
+      </div>
+      <div class="admin-link">
+        <a href="/login.html">Admin Login</a>
+      </div>
+    </div>
+
+  </form>
+
+ <script>
+  const loginForm = document.getElementById("loginForm"); // Make sure your <form> has id="loginForm"
+  const errorMessage = document.getElementById("errorMessage"); // Optional element to show errors
+
+  loginForm.addEventListener("submit", async function (e) {
+    e.preventDefault(); // Stop the form from reloading the page
+
+    // 1. Get input values from form fields
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    try {
+      // 2. Send login credentials to backend
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 3. Store authentication details in localStorage
+        if (data.role === "admin") {
+          localStorage.setItem("adminToken", data.token);
+          window.location.href = "admin-dashboard.html";
+        } else {
+          localStorage.setItem("employeeToken", data.token);
+          localStorage.setItem("employeeId", data.employeeId);
+          window.location.href = "profile.html"; // Redirect employee to their profile
+        }
+      } else {
+        // Display error returned from server (e.g. "Invalid username or password")
+        alert(data.message || "Login failed.");
+      }
+
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Server error. Please check if the backend is running.");
+    }
+  });
+</script>
+
+</body>
+</html>

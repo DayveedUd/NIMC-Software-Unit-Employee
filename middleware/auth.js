@@ -1,31 +1,20 @@
 const jwt = require("jsonwebtoken");
 
-// Checks for a valid "Authorization: Bearer <token>" header.
-// If missing or invalid, the request is rejected before it ever
-// reaches the actual route handler (e.g. viewing/editing employees).
 function verifyToken(req, res, next) {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
 
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({
-            message: "You must be logged in to do that."
-        });
+    if (!token) {
+        return res.status(401).json({ message: "Access denied. Token missing." });
     }
-
-    const token = authHeader.split(" ")[1];
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.admin = decoded; // available to any route that needs it later
+        req.user = decoded; // Exposes { role, id, username } on req.user
         next();
-
     } catch (error) {
-        return res.status(401).json({
-            message: "Your session has expired. Please log in again."
-        });
+        return res.status(401).json({ message: "Invalid or expired token." });
     }
-
 }
 
 module.exports = verifyToken;

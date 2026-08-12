@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400&display=swap" rel="stylesheet">
+<link rel="icon" type="image/jpeg" href="NIMC-logo.png">
 <style>
 
   /* ---------- 1. Reset & base styles ---------- */
@@ -63,8 +64,8 @@
   }
 
   .logo-circle img {
-    width: 130%;
-    height: 130%;
+    width: 120%;
+    height: 120%;
     object-fit: contain;               /* keeps the logo from stretching */
   }
 
@@ -250,6 +251,45 @@
     font-size: 13px;
     color: #7C867F;
   }
+
+  
+
+  /* ---------- 7. Footer section ---------- */
+  .footer {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 24px;
+    margin-top: auto;
+    background: transparent;
+    flex-wrap: wrap;
+  }
+
+  .footer-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0B6E4F;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.3s ease;
+  }
+
+  .footer-btn:hover {
+    background: #095C42;
+  }
+
+  .footer-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
 /* ---------- Responsive ---------- */
   @media (max-width: 600px) {
     .header {
@@ -316,7 +356,7 @@
     <div class="header">
       <div class="header-left">
         <div class="logo-circle">
-          <img src="nimc-logo.jfif" alt="NIMC logo" />
+          <img src="nimc-logo.png" alt="NIMC logo" />
         </div>
         <div class="header-text">
           <h1>National Identity Management Commission</h1>
@@ -343,6 +383,18 @@
     <!-- Shown while loading, on error, or when there's nobody registered yet -->
     <p class="empty-state" id="empty-state"></p>
 
+ 
+    <!-- Footer section with navigation buttons -->
+    <div class="footer">
+      <button class="footer-btn" id="backBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 19l-7-7 7-7"/>
+        </svg>
+        Home
+      </button>
+     
+    </div>
+
   </div>
 
   <script>
@@ -362,10 +414,19 @@
       window.location.href = "login.html";
     });
 
+    // Footer button: Back to landing page
+    document.getElementById("backBtn").addEventListener("click", function () {
+      window.location.href = "index.html";
+    });
+
+   
+
     const resultsList = document.getElementById("results-list");
     const resultsLabel = document.getElementById("results-label");
     const emptyState = document.getElementById("empty-state");
     const searchInput = document.getElementById("search-input");
+
+  
 
     // Person-icon SVG reused for every avatar (until a real photo is uploaded)
     const personIconSVG = `
@@ -415,6 +476,7 @@
       employeeList.forEach(employee => {
         resultsList.appendChild(createResultRow(employee));
       });
+
     }
 
     // Fetch all registered employees from the backend
@@ -469,6 +531,10 @@
       renderResults(filtered);
     });
 
+
+    
+
+    // ---------------------------------------------------------------
     // Kick things off
     loadEmployees();
   </script>

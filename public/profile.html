@@ -442,6 +442,100 @@
     border-radius: 12px;
   }
 
+  .photo-crop-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 18, 16, 0.74);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1100;
+  }
+
+  .photo-crop-modal.active {
+    display: flex;
+  }
+
+  .photo-crop-dialog {
+    width: min(520px, 92vw);
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px 20px 18px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  }
+
+  .photo-crop-dialog h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #16241D;
+    text-align: center;
+  }
+
+  .crop-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .crop-preview {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background-color: #e7efe9;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border: 4px solid #d9ebdf;
+    box-shadow: inset 0 0 0 1px rgba(11, 110, 79, 0.12);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .crop-preview:active {
+    cursor: grabbing;
+  }
+
+  .crop-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .crop-controls button,
+  .crop-actions button {
+    border: 1px solid #d8dbd5;
+    background: #ffffff;
+    color: #16241D;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .crop-controls button:hover,
+  .crop-actions button:hover {
+    border-color: #0B6E4F;
+  }
+
+  .crop-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .crop-actions .secondary {
+    background: #f1f4f1;
+  }
+
+  .crop-actions .primary {
+    background: #0B6E4F;
+    border-color: #0B6E4F;
+    color: #ffffff;
+  }
+
   .image-modal-close {
     position: absolute;
     top: -40px;
@@ -672,6 +766,27 @@
     </div>
   </div>
 
+  <div class="photo-crop-modal" id="photoCropModal" aria-hidden="true">
+    <div class="photo-crop-dialog" role="dialog" aria-modal="true" aria-labelledby="photoCropTitle">
+      <h3 id="photoCropTitle">Adjust profile photo</h3>
+      <div class="crop-stage">
+        <div id="cropPreview" class="crop-preview" aria-label="Profile photo crop preview"></div>
+      </div>
+      <div class="crop-controls">
+        <button type="button" id="cropZoomOut" aria-label="Zoom out">-</button>
+        <button type="button" id="cropZoomIn" aria-label="Zoom in">+</button>
+        <button type="button" id="cropReset" aria-label="Reset crop">Reset</button>
+      </div>
+      <div class="crop-actions">
+        <button type="button" id="cropCancel" class="secondary">Cancel</button>
+        <button type="button" id="cropSave" class="primary">Save Profile Picture</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="face-upload.js"></script>
   <script>
 // ---------------------------------------------------------------
 // 1. AUTH GUARD & ROLE DETECTION
@@ -704,6 +819,8 @@ const backBtn = document.getElementById("backBtn");
 
 let currentEmployee = null;
 let selectedPhotoFile = null;
+let pendingProfilePhotoFile = null;
+let faceAwareController = null;
 
 // Adjust button visibility based on role
 if (!isAdmin) {
@@ -812,6 +929,7 @@ function enterEditMode() {
   document.getElementById("skillInput").value = currentEmployee.skill || "";
 
   selectedPhotoFile = null;
+  pendingProfilePhotoFile = null;
   photoInput.value = "";
 
   profileCard.classList.add("editing");
@@ -820,6 +938,10 @@ function enterEditMode() {
 function exitEditMode() {
   profileCard.classList.remove("editing");
   selectedPhotoFile = null;
+  pendingProfilePhotoFile = null;
+  if (faceAwareController && typeof faceAwareController.resetUpload === "function") {
+    faceAwareController.resetUpload();
+  }
 }
 
 if (editBtn) {
@@ -839,11 +961,25 @@ document.querySelectorAll(".day").forEach(dayEl => {
   });
 });
 
-photoInput.addEventListener("change", function () {
-  if (this.files && this.files.length > 0) {
-    selectedPhotoFile = this.files[0];
-    const previewUrl = URL.createObjectURL(selectedPhotoFile);
+faceAwareController = FaceAwareUpload.init({
+  photoInputId: "photoInput",
+  uploadStatusId: "statusMessage",
+  cropModalId: "photoCropModal",
+  cropPreviewId: "cropPreview",
+  cropZoomInId: "cropZoomIn",
+  cropZoomOutId: "cropZoomOut",
+  cropResetId: "cropReset",
+  cropSaveId: "cropSave",
+  cropCancelId: "cropCancel",
+  onPreviewReady: function (previewUrl) {
     avatar.innerHTML = `<img src="${previewUrl}" alt="New photo preview" />`;
+  },
+  onFileReady: function (file) {
+    pendingProfilePhotoFile = file;
+    selectedPhotoFile = file;
+  },
+  onError: function (message) {
+    alert(message);
   }
 });
 
@@ -865,8 +1001,9 @@ saveBtn.addEventListener("click", async function () {
     formData.append("workDays", day.dataset.day);
   });
 
-  if (selectedPhotoFile) {
-    formData.append("photo", selectedPhotoFile);
+  const photoFileToUpload = pendingProfilePhotoFile || selectedPhotoFile;
+  if (photoFileToUpload) {
+    formData.append("photo", photoFileToUpload);
   }
 
   saveBtn.disabled = true;

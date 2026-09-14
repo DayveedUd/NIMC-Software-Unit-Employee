@@ -255,6 +255,119 @@
   
 
   /* ---------- 7. Footer section ---------- */
+  .memo-panel {
+    max-width: 920px;
+    margin: 32px auto 0;
+    padding: 0 24px 24px;
+  }
+
+  .memo-box {
+    background: #ffffff;
+    border: 1px solid #E4E6E0;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(11, 110, 79, 0.05);
+  }
+
+  .memo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .memo-header h2 {
+    font-size: 18px;
+    color: #16241D;
+  }
+
+  .memo-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .memo-toggle,
+  .submit-memo-btn,
+  .secondary-btn {
+    border: 1px solid #D8DBD5;
+    background: #ffffff;
+    color: #16241D;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .memo-toggle.active,
+  .submit-memo-btn {
+    background: #0B6E4F;
+    border-color: #0B6E4F;
+    color: #ffffff;
+  }
+
+  .memo-form {
+    display: none;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .memo-form.active {
+    display: grid;
+  }
+
+  .memo-input,
+  .memo-textarea,
+  .memo-select {
+    width: 100%;
+    border: 1px solid #D8DBD5;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #16241D;
+    background: #ffffff;
+  }
+
+  .memo-textarea {
+    min-height: 110px;
+    resize: vertical;
+  }
+
+  .memo-status {
+    margin-top: 10px;
+    color: #0B6E4F;
+    font-size: 13px;
+    min-height: 18px;
+  }
+
+  .memo-list {
+    list-style: none;
+    margin-top: 18px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .memo-item {
+    border: 1px solid #E4E6E0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #F9FAF8;
+  }
+
+  .memo-item strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #16241D;
+  }
+
+  .memo-item small {
+    display: block;
+    color: #7C867F;
+    margin-bottom: 8px;
+  }
+
   .footer {
     display: flex;
     gap: 12px;
@@ -383,7 +496,34 @@
     <!-- Shown while loading, on error, or when there's nobody registered yet -->
     <p class="empty-state" id="empty-state"></p>
 
- 
+    <section class="memo-panel">
+      <div class="memo-box">
+        <div class="memo-header">
+          <h2>Memo management</h2>
+          <div class="memo-actions">
+            <button type="button" class="memo-toggle active" data-memo-type="direct">Direct memo</button>
+            <button type="button" class="memo-toggle" data-memo-type="general">General memo</button>
+          </div>
+        </div>
+
+        <form id="memoForm" class="memo-form active">
+          <select id="memoRecipient" class="memo-select" required>
+            <option value="">Select employee</option>
+          </select>
+          <input id="memoTitle" type="text" class="memo-input" placeholder="Memo title" maxlength="120" required />
+          <textarea id="memoContent" class="memo-textarea" placeholder="Type your memo here..." required></textarea>
+          <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
+            <button type="button" class="secondary-btn" id="clearMemoBtn">Clear</button>
+            <button type="submit" class="submit-memo-btn">Send memo</button>
+          </div>
+        </form>
+
+        <div id="memoStatus" class="memo-status" aria-live="polite"></div>
+
+        <ul id="memoList" class="memo-list"></ul>
+      </div>
+    </section>
+
     <!-- Footer section with navigation buttons -->
     <div class="footer">
       <button class="footer-btn" id="backBtn">
@@ -535,8 +675,137 @@
     
 
     // ---------------------------------------------------------------
+    // MEMO MANAGEMENT
+    // ---------------------------------------------------------------
+    const memoForm = document.getElementById("memoForm");
+    const memoRecipient = document.getElementById("memoRecipient");
+    const memoTitle = document.getElementById("memoTitle");
+    const memoContent = document.getElementById("memoContent");
+    const memoStatus = document.getElementById("memoStatus");
+    const memoList = document.getElementById("memoList");
+    let memoMode = "direct";
+
+    function setMemoMode(mode) {
+      memoMode = mode;
+      document.querySelectorAll(".memo-toggle").forEach((button) => {
+        button.classList.toggle("active", button.dataset.memoType === mode);
+      });
+
+      const isDirect = mode === "direct";
+      memoRecipient.style.display = isDirect ? "block" : "none";
+      memoRecipient.required = isDirect;
+      memoForm.classList.toggle("active", true);
+    }
+
+    function populateMemoRecipientOptions(employees) {
+      memoRecipient.innerHTML = '<option value="">Select employee</option>';
+
+      employees.forEach((employee) => {
+        const option = document.createElement("option");
+        option.value = employee._id;
+        option.textContent = `${employee.firstName} ${employee.lastName} (${employee.position})`;
+        memoRecipient.appendChild(option);
+      });
+    }
+
+    async function loadRecentMemos() {
+      try {
+        const response = await fetch("/api/memos", {
+          headers: {
+            "Authorization": `Bearer ${adminToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load memos");
+        }
+
+        const memos = await response.json();
+        memoList.innerHTML = "";
+
+        if (!memos.length) {
+          memoList.innerHTML = '<li class="memo-item"><strong>No memos sent yet.</strong><small>Direct or general memos will appear here.</small></li>';
+          return;
+        }
+
+        memos.forEach((memo) => {
+          const item = document.createElement("li");
+          item.className = "memo-item";
+
+          const recipientText = memo.recipient ? `${memo.recipient.firstName || ""} ${memo.recipient.lastName || ""}`.trim() : "All employees";
+          item.innerHTML = `
+            <strong>${memo.title}</strong>
+            <small>${memo.type} • ${recipientText} • ${new Date(memo.createdAt).toLocaleString()}</small>
+            <div>${memo.content}</div>
+          `;
+          memoList.appendChild(item);
+        });
+      } catch (error) {
+        console.error(error);
+        memoList.innerHTML = '<li class="memo-item"><strong>Unable to load memos.</strong><small>Please reload the dashboard.</small></li>';
+      }
+    }
+
+    document.querySelectorAll(".memo-toggle").forEach((button) => {
+      button.addEventListener("click", () => setMemoMode(button.dataset.memoType));
+    });
+
+    document.getElementById("clearMemoBtn").addEventListener("click", () => {
+      memoForm.reset();
+      memoStatus.textContent = "";
+    });
+
+    memoForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      memoStatus.textContent = "";
+
+      const payload = {
+        title: memoTitle.value.trim(),
+        content: memoContent.value.trim()
+      };
+
+      if (!payload.title || !payload.content) {
+        memoStatus.textContent = "Please complete the title and message.";
+        return;
+      }
+
+      if (memoMode === "direct") {
+        payload.recipientId = memoRecipient.value;
+        if (!payload.recipientId) {
+          memoStatus.textContent = "Please select an employee.";
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(`/api/memos/${memoMode}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${adminToken}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || "Failed to send memo");
+        }
+
+        memoForm.reset();
+        memoStatus.textContent = result.message || "Memo sent successfully.";
+        await loadRecentMemos();
+      } catch (error) {
+        memoStatus.textContent = error.message;
+      }
+    });
+
+    // ---------------------------------------------------------------
     // Kick things off
-    loadEmployees();
+    loadEmployees().then(() => populateMemoRecipientOptions(allEmployees));
+    setMemoMode("direct");
+    loadRecentMemos();
   </script>
 
 </body>

@@ -9,6 +9,10 @@ const app = express();
 // Allows Express to read JSON data from requests
 app.use(express.json());
 
+// Expose the reference sample portrait image so the browser can load it during validation.
+app.get("/sample-face.jpeg", (req, res) => {
+    res.sendFile(path.join(__dirname, "sample-face.jpeg"));
+});
 
 // Serves your HTML, CSS, images, etc. from the public folder.
 // Uses an explicit absolute path (not a relative one) because relative
@@ -19,11 +23,13 @@ app.use(express.static(path.join(__dirname, "public")));
 // Import routes
 const employeeRoutes = require("./routes/employees");
 const authRoutes = require("./routes/auth");
+const memoRoutes = require("./routes/memos");
 
 
 // Connect routes
 app.use("/api/employees", employeeRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/memos", memoRoutes);
 
 
 // MongoDB connection

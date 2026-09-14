@@ -713,6 +713,55 @@ form.addEventListener("submit", async function(e) {
 
     const photoFile = pendingProfilePhotoFile || (photoInput.files && photoInput.files[0]);
     if (photoFile) {
+        const photoMetadata = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function () {
+                const img = new Image();
+                img.onload = function () {
+                    resolve({ width: img.naturalWidth, height: img.naturalHeight, ratio: img.naturalWidth / img.naturalHeight });
+                };
+                img.onerror = function () {
+                    reject(new Error("We couldn't verify the uploaded photo. Please try another image."));
+                };
+                img.src = reader.result;
+            };
+            reader.onerror = function () {
+                reject(new Error("We couldn't verify the uploaded photo. Please try another image."));
+            };
+            reader.readAsDataURL(photoFile);
+        });
+
+        const portraitLower = 0.778 * 0.95;
+        const portraitUpper = 0.778 * 1.05;
+        const squareLower = 1.0 * 0.95;
+        const squareUpper = 1.0 * 1.05;
+
+        const isPortraitStyle = photoMetadata.ratio >= portraitLower && photoMetadata.ratio <= portraitUpper;
+        const isSquareStyle = photoMetadata.ratio >= squareLower && photoMetadata.ratio <= squareUpper;
+
+        if ((!isPortraitStyle && !isSquareStyle) || Math.max(photoMetadata.width, photoMetadata.height) > 1400) {
+            alert("This photo does not match the required portrait format. Please upload a front-facing passport-style portrait similar to the sample image.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit";
+            return;
+        }
+
+        if (isPortraitStyle) {
+            if (photoMetadata.width < 350 || photoMetadata.height < 450) {
+                alert("This photo is too small for the required portrait format. Minimum size is 350 x 450 px for a portrait-style upload.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Submit";
+                return;
+            }
+        } else if (photoMetadata.width < 300 || photoMetadata.height < 300) {
+            alert("This photo is too small for the required portrait format. Minimum size is 300 x 300 px for a square-format upload.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Submit";
+            return;
+        }
+
+        formData.append("photoWidth", String(photoMetadata.width));
+        formData.append("photoHeight", String(photoMetadata.height));
         formData.append("photo", photoFile);
     }
 

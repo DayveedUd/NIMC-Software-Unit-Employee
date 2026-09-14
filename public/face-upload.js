@@ -2,6 +2,26 @@
   const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
   const ACCEPTED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  const SAMPLE_FACE_URL = "/sample-face.jpeg";
+  const SAMPLE_FACE_BOUNDS = {
+    sampleWidth: 800,
+    sampleHeight: 1200,
+    maxWidth: 1400,
+    maxHeight: 1400,
+    aspectTolerance: 0.05,
+    minSquareWidth: 300,
+    minSquareHeight: 300,
+    minPortraitWidth: 350,
+    minPortraitHeight: 450,
+    minFaceCoverage: 0.12,
+    maxFaceCoverage: 0.75,
+    minVerticalFaceCoverage: 0.12,
+    maxVerticalFaceCoverage: 0.8,
+    minCenterRatio: 0.12,
+    maxCenterRatio: 0.88
+  };
+  let faceApiModelLoaded = false;
+  let sampleFaceReference = null;
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -61,9 +81,126 @@
       throw new Error("Face detection library failed to load.");
     }
 
-    if (!faceDetector.isLoaded) {
+    if (!faceApiModelLoaded && !faceDetector.isLoaded) {
       const modelBase = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
       await faceDetector.loadFromUri(modelBase);
+      faceApiModelLoaded = true;
+    }
+
+    return true;
+  }
+
+  function getSampleFaceReference() {
+    if (sampleFaceReference) {
+      return Promise.resolve(sampleFaceReference);
+    }
+
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = function () {
+        sampleFaceReference = {
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          ratio: img.naturalWidth / img.naturalHeight
+        };
+        resolve(sampleFaceReference);
+      };
+      img.onerror = function () {
+        reject(new Error("The reference portrait image could not be loaded. Please try again."));
+      };
+      img.src = SAMPLE_FACE_URL + "?v=" + Date.now();
+    });
+  }
+
+  async function validatePreflightDimensions(file) {
+    const image = await readImageFromFile(file);
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+    const reference = await getSampleFaceReference();
+    const ratio = width / height;
+
+    if (Math.max(width, height) > SAMPLE_FACE_BOUNDS.maxWidth) {
+      throw new Error("This photo is too large. Please upload a photo no larger than 1400 x 1400 pixels.");
+    }
+
+    const portraitLower = reference.ratio * (1 - SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const portraitUpper = reference.ratio * (1 + SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const squareLower = 1.0 * (1 - SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const squareUpper = 1.0 * (1 + SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const isPortraitStyle = ratio >= portraitLower && ratio <= portraitUpper;
+    const isSquareStyle = ratio >= squareLower && ratio <= squareUpper;
+
+    if (!isPortraitStyle && !isSquareStyle) {
+      throw new Error("This photo does not match the required portrait format. Please upload a front-facing passport-style portrait similar to the sample image.");
+    }
+
+    if (isPortraitStyle) {
+      if (width < SAMPLE_FACE_BOUNDS.minPortraitWidth || height < SAMPLE_FACE_BOUNDS.minPortraitHeight) {
+        throw new Error("This photo is too small for the required portrait format. Minimum size is 350 x 450 px for a portrait-style upload.");
+      }
+    } else if (width < SAMPLE_FACE_BOUNDS.minSquareWidth || height < SAMPLE_FACE_BOUNDS.minSquareHeight) {
+      throw new Error("This photo is too small for the required portrait format. Minimum size is 300 x 300 px for a square-format upload.");
+    }
+
+    return image;
+  }
+
+  async function validateSamplePortraitLayout(image, face) {
+    const width = image.naturalWidth;
+    const height = image.naturalHeight;
+    const ratio = width / height;
+    const reference = await getSampleFaceReference();
+    const portraitLower = reference.ratio * (1 - SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const portraitUpper = reference.ratio * (1 + SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const squareLower = 1.0 * (1 - SAMPLE_FACE_BOUNDS.aspectTolerance);
+    const squareUpper = 1.0 * (1 + SAMPLE_FACE_BOUNDS.aspectTolerance);
+
+    const acceptablePortrait = ratio >= portraitLower && ratio <= portraitUpper;
+    const acceptableSquare = ratio >= squareLower && ratio <= squareUpper;
+
+    if (!acceptablePortrait && !acceptableSquare) {
+      throw new Error("This photo does not match the required portrait format. Please upload a front-facing passport-style portrait similar to the sample image.");
+    }
+
+    if (Math.max(width, height) > SAMPLE_FACE_BOUNDS.maxWidth) {
+      throw new Error("This photo is too large. Please upload a photo no larger than 1400 x 1400 pixels.");
+    }
+
+    if (acceptablePortrait) {
+      if (width < SAMPLE_FACE_BOUNDS.minPortraitWidth || height < SAMPLE_FACE_BOUNDS.minPortraitHeight) {
+        throw new Error("This photo is too small for the required portrait format. Minimum size is 350 x 450 px for a portrait-style upload.");
+      }
+    } else {
+      if (width < SAMPLE_FACE_BOUNDS.minSquareWidth || height < SAMPLE_FACE_BOUNDS.minSquareHeight) {
+        throw new Error("This photo is too small for the required portrait format. Minimum size is 300 x 300 px for a square format upload.");
+      }
+    }
+
+    const faceCoverageX = face.width / width;
+    const faceCoverageY = face.height / height;
+    const centerX = face.x + (face.width / 2);
+    const centerY = face.y + (face.height / 2);
+    const horizontalCenterStart = centerX / width;
+    const horizontalCenterEnd = (width - centerX) / width;
+    const verticalCenterStart = centerY / height;
+    const verticalCenterEnd = (height - centerY) / height;
+
+    if (faceCoverageX < SAMPLE_FACE_BOUNDS.minFaceCoverage || faceCoverageX > SAMPLE_FACE_BOUNDS.maxFaceCoverage ||
+      faceCoverageY < SAMPLE_FACE_BOUNDS.minVerticalFaceCoverage || faceCoverageY > SAMPLE_FACE_BOUNDS.maxVerticalFaceCoverage) {
+      throw new Error("The face is too small or too large for the expected portrait framing. Please upload a standard passport-style portrait.");
+    }
+
+    const centerAllowance = 0.08;
+    if (horizontalCenterStart < (SAMPLE_FACE_BOUNDS.minCenterRatio - centerAllowance) ||
+      horizontalCenterEnd < (SAMPLE_FACE_BOUNDS.minCenterRatio - centerAllowance) ||
+      verticalCenterStart < (SAMPLE_FACE_BOUNDS.minCenterRatio - centerAllowance) ||
+      verticalCenterEnd < (SAMPLE_FACE_BOUNDS.minCenterRatio - centerAllowance)) {
+      throw new Error("The face is not centered like the sample portrait. Please upload a straight, front-facing portrait image.");
+    }
+
+    const faceAspect = face.width / face.height;
+    if (faceAspect > 1.8 || faceAspect < 0.25) {
+      throw new Error("Please upload a clear portrait photo with the face visible. Strongly sideways or heavily distorted head poses are not accepted.");
     }
 
     return true;
@@ -72,23 +209,21 @@
   async function detectSingleFace(file) {
     validateImageFile(file);
 
-    const image = await readImageFromFile(file);
+    const image = await validatePreflightDimensions(file);
     await ensureFaceApiLoaded();
 
-    const faceDetections = await window.faceapi.detectAllFaces(
+    const detection = await window.faceapi.detectSingleFace(
       image,
-      new window.faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 })
+      new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.6 })
     );
 
-    if (!faceDetections || faceDetections.length === 0) {
+    if (!detection) {
       throw new Error("No face detected. Please upload a clear photo showing a human face.");
     }
 
-    if (faceDetections.length > 1) {
-      throw new Error("Multiple faces detected. Please upload a photo with only one person.");
-    }
+    const face = detection.box;
+    await validateSamplePortraitLayout(image, face);
 
-    const face = faceDetections[0].box;
     return {
       image,
       face: {
@@ -392,6 +527,41 @@
         lastCroppedFile = null;
       }
     });
+
+    function getImageMetadata(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function () {
+          const img = new Image();
+          img.onload = function () {
+            resolve({ width: img.naturalWidth, height: img.naturalHeight, ratio: img.naturalWidth / img.naturalHeight });
+          };
+          img.onerror = function () {
+            reject(new Error("We couldn't inspect this photo. Please try another image."));
+          };
+          img.src = reader.result;
+        };
+        reader.onerror = function () {
+          reject(new Error("We couldn't inspect this photo. Please try another image."));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function validatePhotoMetadata(file) {
+      return getImageMetadata(file).then(function (meta) {
+        if (meta.width < SAMPLE_FACE_BOUNDS.minWidth || meta.height < SAMPLE_FACE_BOUNDS.minHeight ||
+          meta.width > SAMPLE_FACE_BOUNDS.maxWidth || meta.height > SAMPLE_FACE_BOUNDS.maxHeight) {
+          throw new Error("Your photo does not match the required portrait dimensions. Please upload a portrait similar to the sample image.");
+        }
+
+        if (meta.ratio < SAMPLE_FACE_BOUNDS.minAspectRatio || meta.ratio > SAMPLE_FACE_BOUNDS.maxAspectRatio) {
+          throw new Error("Your photo does not match the expected portrait layout. Please upload a front-facing portrait with the face centered.");
+        }
+
+        return meta;
+      });
+    }
 
     return {
       getLastCroppedFile: function () {

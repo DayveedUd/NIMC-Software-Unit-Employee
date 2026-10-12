@@ -33,7 +33,15 @@
 
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+        <div class="password-wrap">
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" />
+          <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
         <span class="error-message" id="passwordError">Password is required</span>
       </div>
 

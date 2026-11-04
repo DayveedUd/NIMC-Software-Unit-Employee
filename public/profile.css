@@ -55,6 +55,41 @@
     cursor: pointer;
   }
 
+  .back-btn span {
+    display: none;
+  }
+
+  body.embedded {
+    padding: 0;
+    display: block;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  body.embedded .card {
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  body.embedded .back-btn {
+    width: auto;
+    padding: 0 10px;
+  }
+
+  body.embedded .back-btn svg {
+    display: none;
+  }
+
+  body.embedded .back-btn span {
+    display: inline;
+    color: #ffffff;
+    font: 600 12px "Work Sans", sans-serif;
+  }
+
   .back-btn svg {
     width: 16px;
     height: 16px;
@@ -553,100 +588,6 @@
     text-align: center;
     font-size: 14px;
     color: #7C867F;
-  }
-
-  .memo-panel {
-    padding: 0 28px 28px;
-  }
-
-  .memo-box {
-    background: #ffffff;
-    border: 1px solid #E4E6E0;
-    border-radius: 18px;
-    padding: 18px 16px;
-    box-shadow: 0 6px 18px rgba(11, 110, 79, 0.04);
-  }
-
-  .memo-box h3 {
-    font-size: 18px;
-    color: #16241D;
-    margin-bottom: 12px;
-  }
-
-  .memo-list {
-    list-style: none;
-    display: grid;
-    gap: 12px;
-  }
-
-  .memo-item {
-    background: #F9FAF8;
-    border: 1px solid #E4E6E0;
-    border-radius: 12px;
-    padding: 14px 16px;
-  }
-
-  .memo-item-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    align-items: flex-start;
-    margin-bottom: 8px;
-  }
-
-  .memo-item-title {
-    font-weight: 700;
-    color: #16241D;
-  }
-
-  .memo-item-meta {
-    font-size: 12px;
-    color: #7C867F;
-    margin-top: 4px;
-  }
-
-  .memo-item-content {
-    color: #2B332F;
-    line-height: 1.5;
-    white-space: pre-wrap;
-  }
-
-  .memo-actions {
-    margin-top: 10px;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .memo-read-btn,
-  .memo-pill {
-    border: none;
-    border-radius: 999px;
-    padding: 7px 12px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .memo-read-btn {
-    background: #0B6E4F;
-    color: #ffffff;
-    cursor: pointer;
-  }
-
-  .memo-read-btn:disabled {
-    cursor: default;
-    opacity: 0.8;
-  }
-
-  .memo-pill {
-    background: #E9F5EE;
-    color: #0B6E4F;
-  }
-
-  .memo-empty {
-    color: #7C867F;
-    font-size: 13px;
-    margin-top: 10px;
   }
 
   /* ---------- Responsive ---------- */

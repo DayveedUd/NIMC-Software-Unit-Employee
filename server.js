@@ -23,13 +23,11 @@ app.use(express.static(path.join(__dirname, "public")));
 // Import routes
 const employeeRoutes = require("./routes/employees");
 const authRoutes = require("./routes/auth");
-const memoRoutes = require("./routes/memos");
 
 
 // Connect routes
 app.use("/api/employees", employeeRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/memos", memoRoutes);
 
 
 // MongoDB connection

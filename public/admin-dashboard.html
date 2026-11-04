@@ -27,61 +27,40 @@
       <button class="admin-btn" id="logoutBtn">Log out</button>
     </div>
 
-    <!-- Search bar -->
-    <div class="search-wrap">
-      <div class="search-bar">
-        <span class="search-icon"></span>
-        <input type="text" id="search-input" placeholder="Search Intern / Corp Member" />
-      </div>
-    </div>
-
-    <!-- Label above the results list -->
-    <p class="section-label" id="results-label">Registered employees</p>
-
-    <!-- Clickable list of registered people, built dynamically from the database -->
-    <div class="results-list" id="results-list"></div>
-
-    <!-- Shown while loading, on error, or when there's nobody registered yet -->
-    <p class="empty-state" id="empty-state"></p>
-
-    <section class="memo-panel">
-      <div class="memo-box">
-        <div class="memo-header">
-          <h2>Memo management</h2>
-          <div class="memo-actions">
-            <button type="button" class="memo-toggle active" data-memo-type="direct">Direct memo</button>
-            <button type="button" class="memo-toggle" data-memo-type="general">General memo</button>
+    <main class="dashboard-main" id="dashboardMain">
+      <section class="employee-list-panel" id="employeeListPanel" aria-label="Registered employees">
+        <!-- Search bar -->
+        <div class="search-wrap">
+          <div class="search-bar">
+            <span class="search-icon"></span>
+            <input type="text" id="search-input" placeholder="Search Intern / Corp Member" />
           </div>
         </div>
 
-        <form id="memoForm" class="memo-form active">
-          <select id="memoRecipient" class="memo-select" required>
-            <option value="">Select employee</option>
-          </select>
-          <input id="memoTitle" type="text" class="memo-input" placeholder="Memo title" maxlength="120" required />
-          <textarea id="memoContent" class="memo-textarea" placeholder="Type your memo here..." required></textarea>
-          <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
-            <button type="button" class="secondary-btn" id="clearMemoBtn">Clear</button>
-            <button type="submit" class="submit-memo-btn">Send memo</button>
-          </div>
-        </form>
+        <!-- Label above the results list -->
+        <p class="section-label" id="results-label">Registered employees</p>
 
-        <div id="memoStatus" class="memo-status" aria-live="polite"></div>
+        <!-- Clickable list of registered people, built dynamically from the database -->
+        <div class="results-list" id="results-list"></div>
 
-        <ul id="memoList" class="memo-list"></ul>
-      </div>
-    </section>
+        <!-- Shown while loading, on error, or when there's nobody registered yet -->
+        <p class="empty-state" id="empty-state"></p>
 
-    <!-- Footer section with navigation buttons -->
-    <div class="footer">
-      <button class="footer-btn" id="backBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 19l-7-7 7-7"/>
-        </svg>
-        Home
-      </button>
-     
-    </div>
+        <!-- Footer section with navigation buttons -->
+        <div class="footer">
+          <button class="footer-btn" id="backBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 19l-7-7 7-7"/>
+            </svg>
+            Home
+          </button>
+        </div>
+      </section>
+
+      <aside class="profile-panel" id="profilePanel" aria-label="Employee profile" hidden>
+        <iframe id="profileFrame" title="Employee profile"></iframe>
+      </aside>
+    </main>
 
   </div>
 

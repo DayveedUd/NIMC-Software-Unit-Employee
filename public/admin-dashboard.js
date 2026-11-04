@@ -25,6 +25,30 @@
     const resultsLabel = document.getElementById("results-label");
     const emptyState = document.getElementById("empty-state");
     const searchInput = document.getElementById("search-input");
+    const dashboardMain = document.getElementById("dashboardMain");
+    const profilePanel = document.getElementById("profilePanel");
+    const profileFrame = document.getElementById("profileFrame");
+
+    function closeEmployeeProfile() {
+      dashboardMain.classList.remove("profile-open");
+      profilePanel.hidden = true;
+      profileFrame.src = "about:blank";
+    }
+
+    window.addEventListener("message", (event) => {
+      if (event.origin !== window.location.origin || event.source !== profileFrame.contentWindow) {
+        return;
+      }
+
+      if (event.data?.type === "employeeUpdated") {
+        loadEmployees();
+      } else if (event.data?.type === "closeEmployeeProfile") {
+        closeEmployeeProfile();
+      } else if (event.data?.type === "employeeDeleted") {
+        closeEmployeeProfile();
+        loadEmployees();
+      }
+    });
 
   
 
@@ -57,7 +81,15 @@
       `;
 
       row.addEventListener("click", function () {
-        window.location.href = `profile.html?id=${employee._id}`;
+        const profileUrl = `profile.html?id=${encodeURIComponent(employee._id)}`;
+        if (window.matchMedia("(max-width: 600px)").matches) {
+          window.location.href = `${profileUrl}&from=dashboard`;
+          return;
+        }
+
+        dashboardMain.classList.add("profile-open");
+        profilePanel.hidden = false;
+        profileFrame.src = `${profileUrl}&embedded=1`;
       });
 
       return row;
@@ -104,10 +136,11 @@
         allEmployees = await response.json();
 
         if (allEmployees.length === 0) {
+          resultsList.innerHTML = "";
           resultsLabel.textContent = "Registered employees";
           emptyState.textContent = "No employees have registered yet.";
         } else {
-          renderResults(allEmployees);
+          searchInput.dispatchEvent(new Event("input"));
         }
 
       } catch (error) {
@@ -135,134 +168,5 @@
     
 
     // ---------------------------------------------------------------
-    // MEMO MANAGEMENT
-    // ---------------------------------------------------------------
-    const memoForm = document.getElementById("memoForm");
-    const memoRecipient = document.getElementById("memoRecipient");
-    const memoTitle = document.getElementById("memoTitle");
-    const memoContent = document.getElementById("memoContent");
-    const memoStatus = document.getElementById("memoStatus");
-    const memoList = document.getElementById("memoList");
-    let memoMode = "direct";
-
-    function setMemoMode(mode) {
-      memoMode = mode;
-      document.querySelectorAll(".memo-toggle").forEach((button) => {
-        button.classList.toggle("active", button.dataset.memoType === mode);
-      });
-
-      const isDirect = mode === "direct";
-      memoRecipient.style.display = isDirect ? "block" : "none";
-      memoRecipient.required = isDirect;
-      memoForm.classList.toggle("active", true);
-    }
-
-    function populateMemoRecipientOptions(employees) {
-      memoRecipient.innerHTML = '<option value="">Select employee</option>';
-
-      employees.forEach((employee) => {
-        const option = document.createElement("option");
-        option.value = employee._id;
-        option.textContent = `${employee.firstName} ${employee.lastName} (${employee.position})`;
-        memoRecipient.appendChild(option);
-      });
-    }
-
-    async function loadRecentMemos() {
-      try {
-        const response = await fetch("/api/memos", {
-          headers: {
-            "Authorization": `Bearer ${adminToken}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to load memos");
-        }
-
-        const memos = await response.json();
-        memoList.innerHTML = "";
-
-        if (!memos.length) {
-          memoList.innerHTML = '<li class="memo-item"><strong>No memos sent yet.</strong><small>Direct or general memos will appear here.</small></li>';
-          return;
-        }
-
-        memos.forEach((memo) => {
-          const item = document.createElement("li");
-          item.className = "memo-item";
-
-          const recipientText = memo.recipient ? `${memo.recipient.firstName || ""} ${memo.recipient.lastName || ""}`.trim() : "All employees";
-          item.innerHTML = `
-            <strong>${memo.title}</strong>
-            <small>${memo.type} • ${recipientText} • ${new Date(memo.createdAt).toLocaleString()}</small>
-            <div>${memo.content}</div>
-          `;
-          memoList.appendChild(item);
-        });
-      } catch (error) {
-        console.error(error);
-        memoList.innerHTML = '<li class="memo-item"><strong>Unable to load memos.</strong><small>Please reload the dashboard.</small></li>';
-      }
-    }
-
-    document.querySelectorAll(".memo-toggle").forEach((button) => {
-      button.addEventListener("click", () => setMemoMode(button.dataset.memoType));
-    });
-
-    document.getElementById("clearMemoBtn").addEventListener("click", () => {
-      memoForm.reset();
-      memoStatus.textContent = "";
-    });
-
-    memoForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      memoStatus.textContent = "";
-
-      const payload = {
-        title: memoTitle.value.trim(),
-        content: memoContent.value.trim()
-      };
-
-      if (!payload.title || !payload.content) {
-        memoStatus.textContent = "Please complete the title and message.";
-        return;
-      }
-
-      if (memoMode === "direct") {
-        payload.recipientId = memoRecipient.value;
-        if (!payload.recipientId) {
-          memoStatus.textContent = "Please select an employee.";
-          return;
-        }
-      }
-
-      try {
-        const response = await fetch(`/api/memos/${memoMode}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${adminToken}`
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.message || "Failed to send memo");
-        }
-
-        memoForm.reset();
-        memoStatus.textContent = result.message || "Memo sent successfully.";
-        await loadRecentMemos();
-      } catch (error) {
-        memoStatus.textContent = error.message;
-      }
-    });
-
-    // ---------------------------------------------------------------
     // Kick things off
-    loadEmployees().then(() => populateMemoRecipientOptions(allEmployees));
-    setMemoMode("direct");
-    loadRecentMemos();
+    loadEmployees();

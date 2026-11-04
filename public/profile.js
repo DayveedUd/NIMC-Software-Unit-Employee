@@ -12,6 +12,15 @@ const isAdmin = Boolean(adminToken);
 const activeToken = adminToken || employeeToken;
 
 const params = new URLSearchParams(window.location.search);
+const isEmbedded = params.get("embedded") === "1";
+const openedFromDashboard = params.get("from") === "dashboard";
+if (isEmbedded) {
+  document.body.classList.add("embedded");
+}
+if (isEmbedded || openedFromDashboard) {
+  document.getElementById("backBtnLabel").textContent = "Cancel";
+}
+
 const urlEmployeeId = params.get("id");
 const targetEmployeeId = isAdmin ? (urlEmployeeId || localStorage.getItem("employeeId")) : localStorage.getItem("employeeId");
 
@@ -52,7 +61,11 @@ if (!isAdmin) {
 
   if (backBtn) {
     backBtn.onclick = function () {
-      window.location.href = "admin-dashboard.html";
+      if (isEmbedded) {
+        window.parent.postMessage({ type: "closeEmployeeProfile" }, window.location.origin);
+      } else {
+        window.location.href = "admin-dashboard.html";
+      }
     };
   }
 }
@@ -237,6 +250,9 @@ saveBtn.addEventListener("click", async function () {
 
     exitEditMode();
     renderProfile(data.employee);
+    if (isEmbedded) {
+      window.parent.postMessage({ type: "employeeUpdated" }, window.location.origin);
+    }
 
   } catch (error) {
     console.error(error);
@@ -278,7 +294,11 @@ if (deleteBtn) {
       }
 
       alert(data.message);
-      window.location.href = "admin-dashboard.html";
+      if (isEmbedded) {
+        window.parent.postMessage({ type: "employeeDeleted" }, window.location.origin);
+      } else {
+        window.location.href = "admin-dashboard.html";
+      }
 
     } catch (error) {
       console.error(error);
@@ -310,89 +330,5 @@ imageModal.addEventListener("click", (e) => {
 });
 
 // ---------------------------------------------------------------
-  // 7. MEMO INBOX
-  // ---------------------------------------------------------------
-  const memoList = document.getElementById("memoList");
-
-  function renderMemoList(memos) {
-    memoList.innerHTML = "";
-
-    if (!memos.length) {
-      memoList.innerHTML = '<li class="memo-empty">No memos yet. Check back later.</li>';
-      return;
-    }
-
-    memos.forEach((memo) => {
-      const isRead = memo.readBy && memo.readBy.some((entry) => String(entry.employee) === String(targetEmployeeId));
-
-      const item = document.createElement("li");
-      item.className = "memo-item";
-      item.innerHTML = `
-        <div class="memo-item-header">
-          <div>
-            <div class="memo-item-title">${memo.title}</div>
-            <div class="memo-item-meta">${memo.type} • ${memo.senderName || "Admin"} • ${new Date(memo.createdAt).toLocaleString()}</div>
-          </div>
-          ${isRead ? '<span class="memo-pill">Read</span>' : '<span class="memo-pill">Unread</span>'}
-        </div>
-        <div class="memo-item-content">${memo.content}</div>
-        <div class="memo-actions">
-          ${isRead ? '<button type="button" class="memo-read-btn" disabled>Marked read</button>' : `<button type="button" class="memo-read-btn" data-id="${memo._id}">Mark as read</button>`}
-        </div>
-      `;
-
-      const readButton = item.querySelector(".memo-read-btn");
-      if (readButton && !readButton.disabled) {
-        readButton.addEventListener("click", async () => {
-          try {
-            const response = await fetch(`/api/memos/${memo._id}/read`, {
-              method: "PATCH",
-              headers: {
-                "Authorization": `Bearer ${activeToken}`
-              }
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-              throw new Error(result.message || "Unable to mark memo as read");
-            }
-
-            await loadEmployeeMemos();
-          } catch (error) {
-            alert(error.message);
-          }
-        });
-      }
-
-      memoList.appendChild(item);
-    });
-  }
-
-  async function loadEmployeeMemos() {
-    if (!employeeToken || !targetEmployeeId) {
-      memoList.innerHTML = '<li class="memo-empty">Memo inbox is only available for signed-in employees.</li>';
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/memos", {
-        headers: {
-          "Authorization": `Bearer ${activeToken}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to load memos");
-      }
-
-      const memos = await response.json();
-      renderMemoList(memos);
-    } catch (error) {
-      console.error(error);
-      memoList.innerHTML = '<li class="memo-empty">Could not load memos right now.</li>';
-    }
-  }
-
   // Initialize
-  loadProfile();
-  loadEmployeeMemos();
+loadProfile();

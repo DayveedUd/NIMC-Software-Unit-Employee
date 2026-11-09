@@ -206,6 +206,11 @@ faceAwareController = FaceAwareUpload.init({
   }
 });
 
+photoInput.addEventListener("change", function () {
+  pendingProfilePhotoFile = null;
+  selectedPhotoFile = null;
+});
+
 // ---------------------------------------------------------------
 // 4. SAVE PROFILE (PUT /api/employees/:id)
 // ---------------------------------------------------------------

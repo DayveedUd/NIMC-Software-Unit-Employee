@@ -2,39 +2,31 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const bcrypt = require("bcryptjs");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const rateLimit = require("express-rate-limit");
 
 const Employee = require("../models/Employee");
 const verifyToken = require("../middleware/auth");
 const cloudinary = require("../config/cloudinary");
+const validatePassportPhoto = require("../middleware/validatePassportPhoto");
 
-const SAMPLE_FACE_BOUNDS = {
-    minDimension: 200,
-    maxDimension: 1400
-};
-
-function validatePortraitMetadata(width, height) {
-    if (!width || !height) {
-        throw new Error("Your photo could not be validated. Please upload a clear portrait image.");
-    }
-
-    if (width < SAMPLE_FACE_BOUNDS.minDimension || height < SAMPLE_FACE_BOUNDS.minDimension ||
-        Math.max(width, height) > SAMPLE_FACE_BOUNDS.maxDimension) {
-        throw new Error("Your photo must be between 200 x 200 and 1400 x 1400 pixels.");
-    }
+// Photos are held in memory so they can be validated BEFORE anything is
+// uploaded to Cloudinary (rejected photos never reach storage).
+function uploadPhotoToCloudinary(buffer) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: "nimc-employees",
+                allowed_formats: ["jpg", "jpeg", "png", "webp"],
+                transformation: [{ width: 500, height: 500, crop: "limit" }]
+            },
+            (error, result) => (error ? reject(error) : resolve(result))
+        );
+        stream.end(buffer);
+    });
 }
 
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: "nimc-employees",
-        allowed_formats: ["jpg", "jpeg", "png", "webp"],
-        transformation: [{ width: 500, height: 500, crop: "limit" }]
-    }
-});
-
 const upload = multer({
-    storage: storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: function (req, file, cb) {
         if (file.mimetype.startsWith("image/")) {
@@ -45,24 +37,56 @@ const upload = multer({
     }
 });
 
+// Runs multer and returns JSON errors (file too large, wrong type) instead of
+// letting Express send an HTML error page.
+function photoUpload(req, res, next) {
+    upload.single("photo")(req, res, function (err) {
+        if (err) {
+            const message = err.code === "LIMIT_FILE_SIZE"
+                ? "Image is too large. The maximum size is 5MB."
+                : err.message || "Photo upload failed.";
+            return res.status(400).json({ message });
+        }
+        next();
+    });
+}
+
+// Limits calls to the (paid) vision check. On serverless this is per-instance.
+const photoCheckLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many photo checks. Please wait a few minutes and try again." }
+});
+
+// ---------------------------------------------------------------
+// VALIDATE THAT AN IMAGE CONTAINS A HUMAN FACE
+// ---------------------------------------------------------------
+router.post("/validate-photo", photoCheckLimiter, photoUpload, validatePassportPhoto, (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: "Please choose a photo." });
+    }
+    res.json({ ok: true });
+});
+
 // ---------------------------------------------------------------
 // REGISTER EMPLOYEE
 // ---------------------------------------------------------------
-router.post("/register", upload.single("photo"), async (req, res) => {
+router.post("/register", photoCheckLimiter, photoUpload, validatePassportPhoto, async (req, res) => {
+    let uploadedPhoto = null;
     try {
+        if (!req.file) {
+            return res.status(400).json({
+                message: "A photo showing a human face is required to register."
+            });
+        }
+
         const employeeData = { ...req.body };
 
-        const submittedWidth = Number(req.body.photoWidth);
-        const submittedHeight = Number(req.body.photoHeight);
-
-        if (req.file || submittedWidth || submittedHeight) {
-            validatePortraitMetadata(submittedWidth, submittedHeight);
-        }
-
-        if (req.file) {
-            employeeData.photoUrl = req.file.path;
-            employeeData.photoPublicId = req.file.filename;
-        }
+        uploadedPhoto = await uploadPhotoToCloudinary(req.file.buffer);
+        employeeData.photoUrl = uploadedPhoto.secure_url;
+        employeeData.photoPublicId = uploadedPhoto.public_id;
 
         if (employeeData.workDays && !Array.isArray(employeeData.workDays)) {
             employeeData.workDays = [employeeData.workDays];
@@ -81,6 +105,11 @@ router.post("/register", upload.single("photo"), async (req, res) => {
         });
 
     } catch (error) {
+        // Don't leave an orphaned photo in Cloudinary if registration failed
+        if (uploadedPhoto) {
+            cloudinary.uploader.destroy(uploadedPhoto.public_id).catch(() => {});
+        }
+
         if (error.code === 11000) {
             return res.status(409).json({
                 message: "That username or email is already registered."
@@ -153,7 +182,8 @@ router.get("/:id", verifyToken, async (req, res) => {
 // ---------------------------------------------------------------
 // UPDATE EMPLOYEE (Admin OR Self)
 // ---------------------------------------------------------------
-router.put("/:id", verifyToken, upload.single("photo"), async (req, res) => {
+router.put("/:id", verifyToken, photoCheckLimiter, photoUpload, validatePassportPhoto, async (req, res) => {
+    let uploadedPhoto = null;
     try {
         const targetId = req.params.id;
         const isSelf = req.user.role === "employee" && req.user.id === targetId;
@@ -185,11 +215,9 @@ router.put("/:id", verifyToken, upload.single("photo"), async (req, res) => {
         }
 
         if (req.file) {
-            if (employee.photoPublicId) {
-                cloudinary.uploader.destroy(employee.photoPublicId).catch(() => {});
-            }
-            updates.photoUrl = req.file.path;
-            updates.photoPublicId = req.file.filename;
+            uploadedPhoto = await uploadPhotoToCloudinary(req.file.buffer);
+            updates.photoUrl = uploadedPhoto.secure_url;
+            updates.photoPublicId = uploadedPhoto.public_id;
         }
 
         const updatedEmployee = await Employee.findByIdAndUpdate(
@@ -198,12 +226,21 @@ router.put("/:id", verifyToken, upload.single("photo"), async (req, res) => {
             { new: true, runValidators: true }
         ).select("-password");
 
+        // Remove the replaced photo only after the update succeeded
+        if (uploadedPhoto && employee.photoPublicId) {
+            cloudinary.uploader.destroy(employee.photoPublicId).catch(() => {});
+        }
+
         res.json({
             message: "Employee updated successfully",
             employee: updatedEmployee
         });
 
     } catch (error) {
+        if (uploadedPhoto) {
+            cloudinary.uploader.destroy(uploadedPhoto.public_id).catch(() => {});
+        }
+
         if (error.code === 11000) {
             return res.status(409).json({ message: "Username or email is already taken." });
         }

@@ -2,10 +2,10 @@
   const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
   const ACCEPTED_EXTENSIONS = ["jpg", "jpeg", "jfif", "png", "webp"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
-  const MIN_IMAGE_DIMENSION = 200;
-  const MAX_IMAGE_DIMENSION = 1400;
   const PASSPORT_CROP_RATIO = 0.8;
-  let faceApiModelLoaded = false;
+  const MIN_FACE_HEIGHT_RATIO = 0.35;
+  const MAX_FACE_HEIGHT_RATIO = 0.75;
+  let faceApiModelsLoaded = false;
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -60,33 +60,24 @@
       throw new Error("Face detection is unavailable right now.");
     }
 
-    const faceDetector = window.faceapi && window.faceapi.nets && window.faceapi.nets.tinyFaceDetector;
+    const faceDetector = window.faceapi.nets.tinyFaceDetector;
     if (!faceDetector) {
       throw new Error("Face detection library failed to load.");
     }
 
-    if (!faceApiModelLoaded && !faceDetector.isLoaded) {
+    if (!faceApiModelsLoaded) {
       const modelBase = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
-      await faceDetector.loadFromUri(modelBase);
-      faceApiModelLoaded = true;
+      if (!faceDetector.isLoaded) {
+        await faceDetector.loadFromUri(modelBase);
+      }
+      faceApiModelsLoaded = true;
     }
 
     return true;
   }
 
   async function validatePreflightDimensions(file) {
-    const image = await readImageFromFile(file);
-    const width = image.naturalWidth;
-    const height = image.naturalHeight;
-    if (width < MIN_IMAGE_DIMENSION || height < MIN_IMAGE_DIMENSION) {
-      throw new Error("This photo is too small. Please upload an image at least 200 x 200 pixels.");
-    }
-
-    if (Math.max(width, height) > MAX_IMAGE_DIMENSION) {
-      throw new Error("This photo is too large. Please upload a photo no larger than 1400 x 1400 pixels.");
-    }
-
-    return image;
+    return readImageFromFile(file);
   }
 
   async function detectSingleFace(file) {
@@ -95,15 +86,22 @@
     const image = await validatePreflightDimensions(file);
     await ensureFaceApiLoaded();
 
-    const detection = await window.faceapi.detectSingleFace(
+    const detections = await window.faceapi.detectAllFaces(
       image,
-      new window.faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+      new window.faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.35 })
     );
 
-    if (!detection) {
+    if (!detections || detections.length === 0) {
       throw new Error("No face detected. Please upload a clear photo showing a human face.");
     }
-    const face = detection.box;
+    const largestDetection = detections.reduce((largest, detection) =>
+      detection.box.width * detection.box.height > largest.box.width * largest.box.height ? detection : largest
+    );
+    const face = largestDetection.box;
+    const faceHeightRatio = face.height / image.naturalHeight;
+    if (faceHeightRatio < MIN_FACE_HEIGHT_RATIO || faceHeightRatio > MAX_FACE_HEIGHT_RATIO) {
+      throw new Error("Please choose an image where the face/head occupies 30%–75% of the image height.");
+    }
 
     return {
       image,
@@ -134,13 +132,13 @@
 
   function getBaseCropHeight(image, face) {
     const maxHeight = Math.min(image.naturalHeight, image.naturalWidth / PASSPORT_CROP_RATIO);
-    return Math.min(face.height * 4.2, maxHeight);
+    return Math.min(face.height / 0.6, maxHeight);
   }
 
   function getCropRect(image, face, zoom, offsetX, offsetY) {
     const maxHeight = Math.min(image.naturalHeight, image.naturalWidth / PASSPORT_CROP_RATIO);
     const minHeight = Math.min(200, maxHeight);
-    const height = clamp(getBaseCropHeight(image, face) * zoom, minHeight, maxHeight);
+    const height = clamp(getBaseCropHeight(image, face) / zoom, minHeight, maxHeight);
     const width = height * PASSPORT_CROP_RATIO;
     const faceCenterX = face.x + (face.width / 2);
     const centeredX = faceCenterX - (width / 2);
@@ -181,6 +179,7 @@
       onPreviewReady,
       onFileReady,
       onError,
+      remoteValidate,
       uploadPreviewAlt = "New profile photo preview"
     } = options;
 
@@ -237,14 +236,17 @@
         cropState.offsetY
       );
 
-      const backgroundSizeX = (detectedImage.naturalWidth / cropRect.width) * 100;
-      const backgroundSizeY = (detectedImage.naturalHeight / cropRect.height) * 100;
-      const backgroundX = (-cropRect.x / detectedImage.naturalWidth) * 100;
-      const backgroundY = (-cropRect.y / detectedImage.naturalHeight) * 100;
+      const scale = Math.min(
+        cropPreview.clientWidth / cropRect.width,
+        cropPreview.clientHeight / cropRect.height
+      );
+      const backgroundX = (cropPreview.clientWidth - cropRect.width * scale) / 2 - cropRect.x * scale;
+      const backgroundY = (cropPreview.clientHeight - cropRect.height * scale) / 2 - cropRect.y * scale;
 
       cropPreview.style.backgroundImage = `url("${objectUrl}")`;
-      cropPreview.style.backgroundSize = `${backgroundSizeX}% ${backgroundSizeY}%`;
-      cropPreview.style.backgroundPosition = `${backgroundX}% ${backgroundY}%`;
+      cropPreview.style.backgroundSize =
+        `${detectedImage.naturalWidth * scale}px ${detectedImage.naturalHeight * scale}px`;
+      cropPreview.style.backgroundPosition = `${backgroundX}px ${backgroundY}px`;
       cropPreview.style.backgroundRepeat = "no-repeat";
       cropPreview.setAttribute("aria-label", uploadPreviewAlt);
     }
@@ -296,7 +298,7 @@
 
     if (zoomOutBtn) {
       zoomOutBtn.addEventListener("click", function () {
-        cropState.zoom = clamp(cropState.zoom - 0.12, 1, 2.5);
+        cropState.zoom = clamp(cropState.zoom - 0.12, 0.4, 2.5);
         updateCropPreview();
       });
     }
@@ -331,7 +333,11 @@
           cropState.offsetX,
           cropState.offsetY
         );
-
+        const faceHeightRatio = detectedFace.height / cropRect.height;
+        if (faceHeightRatio < MIN_FACE_HEIGHT_RATIO || faceHeightRatio > MAX_FACE_HEIGHT_RATIO) {
+          setStatus("Adjust the crop so the face/head occupies 50%–75% of the image height.", "error");
+          return;
+        }
         const canvas = document.createElement("canvas");
         const outputWidth = 512;
         const outputHeight = 640;
@@ -365,6 +371,27 @@
         const sourceName = (photoInput.files && photoInput.files[0] && photoInput.files[0].name) || "profile-picture.jpg";
         const fileName = sourceName.replace(/\.[^/.]+$/, "") + ".jpg";
         lastCroppedFile = new File([blob], fileName, { type: "image/jpeg" });
+
+        if (typeof remoteValidate === "function") {
+          try {
+            saveBtn.disabled = true;
+            setStatus("Checking that a face is visible…", "loading");
+            await remoteValidate(lastCroppedFile);
+          } catch (error) {
+            lastCroppedFile = null;
+            closeCropDialog();
+            photoInput.value = "";
+            clearObjectUrl();
+            detectedImage = null;
+            detectedFace = null;
+            const message = error.message || "Photo check failed. Please try another photo.";
+            if (typeof onError === "function") onError(message);
+            setStatus(message, "error");
+            return;
+          } finally {
+            saveBtn.disabled = false;
+          }
+        }
 
         if (typeof onFileReady === "function") {
           onFileReady(lastCroppedFile);
@@ -437,11 +464,6 @@
 
     function validatePhotoMetadata(file) {
       return getImageMetadata(file).then(function (meta) {
-        if (meta.width < MIN_IMAGE_DIMENSION || meta.height < MIN_IMAGE_DIMENSION ||
-          Math.max(meta.width, meta.height) > MAX_IMAGE_DIMENSION) {
-          throw new Error("Your photo must be between 200 x 200 and 1400 x 1400 pixels.");
-        }
-
         return meta;
       });
     }

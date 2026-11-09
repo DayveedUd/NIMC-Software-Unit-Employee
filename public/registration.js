@@ -24,11 +24,24 @@ const cropController = FaceAwareUpload.init({
     onFileReady: function (file) {
         pendingProfilePhotoFile = file;
     },
+    remoteValidate: async function (file) {
+        const fd = new FormData();
+        fd.append("photo", file);
+        const res = await fetch("/api/employees/validate-photo", { method: "POST", body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.message || "Photo check failed. Please try another photo.");
+        }
+    },
     onError: function (message) {
         uploadStatus.textContent = message;
         uploadStatus.classList.remove("success");
         uploadStatus.classList.add("error");
     }
+});
+
+photoInput.addEventListener("change", function () {
+    pendingProfilePhotoFile = null;
 });
 
 const form = document.getElementById("registrationForm");
@@ -167,38 +180,12 @@ form.addEventListener("submit", async function(e) {
         formData.append("workDays", day.textContent);
     });
 
-    const photoFile = pendingProfilePhotoFile || (photoInput.files && photoInput.files[0]);
-    if (photoFile) {
-        const photoMetadata = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function () {
-                const img = new Image();
-                img.onload = function () {
-                    resolve({ width: img.naturalWidth, height: img.naturalHeight, ratio: img.naturalWidth / img.naturalHeight });
-                };
-                img.onerror = function () {
-                    reject(new Error("We couldn't verify the uploaded photo. Please try another image."));
-                };
-                img.src = reader.result;
-            };
-            reader.onerror = function () {
-                reject(new Error("We couldn't verify the uploaded photo. Please try another image."));
-            };
-            reader.readAsDataURL(photoFile);
-        });
-
-        if (photoMetadata.width < 200 || photoMetadata.height < 200 ||
-            Math.max(photoMetadata.width, photoMetadata.height) > 1400) {
-            alert("Please upload a photo between 200 x 200 and 1400 x 1400 pixels.");
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Submit";
-            return;
-        }
-
-        formData.append("photoWidth", String(photoMetadata.width));
-        formData.append("photoHeight", String(photoMetadata.height));
-        formData.append("photo", photoFile);
+    if (!pendingProfilePhotoFile) {
+        alert("A photo is required. Complete the face check and save a crop where the face/head occupies 50%–75% of the image height.");
+        return;
     }
+
+    formData.append("photo", pendingProfilePhotoFile);
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";

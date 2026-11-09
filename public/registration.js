@@ -24,15 +24,6 @@ const cropController = FaceAwareUpload.init({
     onFileReady: function (file) {
         pendingProfilePhotoFile = file;
     },
-    remoteValidate: async function (file) {
-        const fd = new FormData();
-        fd.append("photo", file);
-        const res = await fetch("/api/employees/validate-photo", { method: "POST", body: fd });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            throw new Error(data.message || "Photo check failed. Please try another photo.");
-        }
-    },
     onError: function (message) {
         uploadStatus.textContent = message;
         uploadStatus.classList.remove("success");

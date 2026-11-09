@@ -2,12 +2,10 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const bcrypt = require("bcryptjs");
-const rateLimit = require("express-rate-limit");
 
 const Employee = require("../models/Employee");
 const verifyToken = require("../middleware/auth");
 const cloudinary = require("../config/cloudinary");
-const validatePassportPhoto = require("../middleware/validatePassportPhoto");
 
 // Photos are held in memory so they can be validated BEFORE anything is
 // uploaded to Cloudinary (rejected photos never reach storage).
@@ -51,29 +49,10 @@ function photoUpload(req, res, next) {
     });
 }
 
-// Limits calls to the (paid) vision check. On serverless this is per-instance.
-const photoCheckLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many photo checks. Please wait a few minutes and try again." }
-});
-
-// ---------------------------------------------------------------
-// VALIDATE THAT AN IMAGE CONTAINS A HUMAN FACE
-// ---------------------------------------------------------------
-router.post("/validate-photo", photoCheckLimiter, photoUpload, validatePassportPhoto, (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "Please choose a photo." });
-    }
-    res.json({ ok: true });
-});
-
 // ---------------------------------------------------------------
 // REGISTER EMPLOYEE
 // ---------------------------------------------------------------
-router.post("/register", photoCheckLimiter, photoUpload, validatePassportPhoto, async (req, res) => {
+router.post("/register", photoUpload, async (req, res) => {
     let uploadedPhoto = null;
     try {
         if (!req.file) {
@@ -182,7 +161,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 // ---------------------------------------------------------------
 // UPDATE EMPLOYEE (Admin OR Self)
 // ---------------------------------------------------------------
-router.put("/:id", verifyToken, photoCheckLimiter, photoUpload, validatePassportPhoto, async (req, res) => {
+router.put("/:id", verifyToken, photoUpload, async (req, res) => {
     let uploadedPhoto = null;
     try {
         const targetId = req.params.id;

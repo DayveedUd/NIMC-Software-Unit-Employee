@@ -245,8 +245,8 @@
 
   .crop-preview {
     width: 220px;
-    height: 220px;
-    border-radius: 50%;
+    height: 275px;
+    border-radius: 12px;
     background-color: #e7efe9;
     background-repeat: no-repeat;
     background-size: cover;

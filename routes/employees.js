@@ -9,15 +9,8 @@ const verifyToken = require("../middleware/auth");
 const cloudinary = require("../config/cloudinary");
 
 const SAMPLE_FACE_BOUNDS = {
-    maxWidth: 1400,
-    maxHeight: 1400,
-    sampleWidth: 800,
-    sampleHeight: 1200,
-    aspectTolerance: 0.05,
-    minSquareWidth: 300,
-    minSquareHeight: 300,
-    minPortraitWidth: 350,
-    minPortraitHeight: 450
+    minDimension: 200,
+    maxDimension: 1400
 };
 
 function validatePortraitMetadata(width, height) {
@@ -25,29 +18,9 @@ function validatePortraitMetadata(width, height) {
         throw new Error("Your photo could not be validated. Please upload a clear portrait image.");
     }
 
-    if (Math.max(width, height) > SAMPLE_FACE_BOUNDS.maxWidth) {
-        throw new Error("Your photo is too large. Please upload a photo no larger than 1400 x 1400 pixels.");
-    }
-
-    const ratio = width / height;
-    const referenceRatio = SAMPLE_FACE_BOUNDS.sampleWidth / SAMPLE_FACE_BOUNDS.sampleHeight;
-    const portraitLower = referenceRatio * (1 - SAMPLE_FACE_BOUNDS.aspectTolerance);
-    const portraitUpper = referenceRatio * (1 + SAMPLE_FACE_BOUNDS.aspectTolerance);
-    const squareLower = 1.0 * (1 - SAMPLE_FACE_BOUNDS.aspectTolerance);
-    const squareUpper = 1.0 * (1 + SAMPLE_FACE_BOUNDS.aspectTolerance);
-    const isPortraitStyle = ratio >= portraitLower && ratio <= portraitUpper;
-    const isSquareStyle = ratio >= squareLower && ratio <= squareUpper;
-
-    if (!isPortraitStyle && !isSquareStyle) {
-        throw new Error("Your photo does not match the required portrait layout. Please upload a front-facing portrait similar to the sample image.");
-    }
-
-    if (isPortraitStyle) {
-        if (width < SAMPLE_FACE_BOUNDS.minPortraitWidth || height < SAMPLE_FACE_BOUNDS.minPortraitHeight) {
-            throw new Error("Your photo is too small for the required portrait format. Minimum size is 350 x 450 px for a portrait-style upload.");
-        }
-    } else if (width < SAMPLE_FACE_BOUNDS.minSquareWidth || height < SAMPLE_FACE_BOUNDS.minSquareHeight) {
-        throw new Error("Your photo is too small for the required portrait format. Minimum size is 300 x 300 px for a square-format upload.");
+    if (width < SAMPLE_FACE_BOUNDS.minDimension || height < SAMPLE_FACE_BOUNDS.minDimension ||
+        Math.max(width, height) > SAMPLE_FACE_BOUNDS.maxDimension) {
+        throw new Error("Your photo must be between 200 x 200 and 1400 x 1400 pixels.");
     }
 }
 
